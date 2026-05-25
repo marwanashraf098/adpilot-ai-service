@@ -165,3 +165,145 @@ Types:
     recommendations = json.loads(content)
 
     return {"recommendations": recommendations}
+
+
+
+class ChatMessage(BaseModel):
+    message: str
+    campaigns: list[Campaign]
+    industry: str = "business"
+
+@app.post("/chat")
+def chat(req: ChatMessage):
+    campaigns_context = ""
+    for c in req.campaigns:
+        campaigns_context += f"""
+Campaign: {c.name}
+- Status: {c.status}
+- Daily Budget: ${c.daily_budget}
+- Spend: ${c.spend}
+- Impressions: {c.impressions}
+- Clicks: {c.clicks}
+- CTR: {c.ctr}%
+- CPC: ${c.cpc}
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role": "system",
+                "content": f"""You are AdPilot, an expert AI media buyer helping a {req.industry} business owner manage their Facebook and Google ad campaigns.
+
+You have access to their real campaign data. Answer their questions clearly and specifically based on this data. Be direct, use numbers, and always give actionable advice.
+
+Current campaign data:
+{campaigns_context}
+
+Keep responses concise — 2-4 sentences max unless a detailed explanation is needed. Always end with one specific action they should take."""
+            },
+            {
+                "role": "user",
+                "content": req.message
+            }
+        ],
+        temperature=0.7,
+        max_tokens=500
+    )
+
+    return {"response": response.choices[0].message.content}
+
+
+class AuditRequest(BaseModel):
+    business_name: str
+    industry: str = "business"
+    facebook_page_url: str = ""
+    instagram_url: str = ""
+    tiktok_url: str = ""
+    website_url: str = ""
+
+@app.post("/audit")
+def generate_audit(req: AuditRequest):
+    # Build presence summary
+    presence = []
+    if req.facebook_page_url:
+        presence.append(f"Facebook: {req.facebook_page_url}")
+    if req.instagram_url:
+        presence.append(f"Instagram: {req.instagram_url}")
+    if req.tiktok_url:
+        presence.append(f"TikTok: {req.tiktok_url}")
+    if req.website_url:
+        presence.append(f"Website: {req.website_url}")
+
+    presence_text = "\n".join(presence) if presence else "No links provided"
+
+    prompt = f"""
+You are an expert digital advertising auditor for businesses in Egypt and the Middle East.
+
+Business Name: {req.business_name}
+Industry: {req.industry}
+Online Presence:
+{presence_text}
+
+Based on the platforms they are on and common patterns for {req.industry} businesses in Egypt, generate a realistic and specific advertising audit.
+
+Evaluate these 7 areas:
+1. Platform Presence (are they on the right platforms for their industry?)
+2. Ad Account Setup (pixel likely installed, conversion tracking)
+3. Campaign Structure (likely campaign objectives being used)
+4. Audience Targeting (how well they likely target their audience)
+5. Ad Creative Quality (quality of typical ads for this industry)
+6. Budget Efficiency (typical budget waste for this industry)
+7. Overall Strategy (overall advertising maturity)
+
+Be specific to their industry and the platforms they listed. If they have a website, mention pixel tracking. If they have TikTok, mention video creative needs. If they don't have a platform they should be on, mention it as an issue.
+
+Return ONLY a JSON object. No extra text. Format:
+{{
+  "overall_score": 65,
+  "estimated_monthly_waste": "EGP 1,200",
+  "missing_platforms": ["TikTok", "Google"],
+  "grades": {{
+    "platform_presence": {{ "score": 60, "label": "Needs work", "finding": "specific finding" }},
+    "ad_setup": {{ "score": 60, "label": "Needs work", "finding": "specific finding" }},
+    "campaign_structure": {{ "score": 70, "label": "Average", "finding": "specific finding" }},
+    "audience_targeting": {{ "score": 65, "label": "Average", "finding": "specific finding" }},
+    "ad_creative": {{ "score": 75, "label": "Good", "finding": "specific finding" }},
+    "budget_efficiency": {{ "score": 55, "label": "Needs work", "finding": "specific finding" }},
+    "overall_strategy": {{ "score": 65, "label": "Average", "finding": "specific finding" }}
+  }},
+  "top_issues": [
+    "specific issue 1",
+    "specific issue 2",
+    "specific issue 3"
+  ],
+  "quick_wins": [
+    "specific quick win 1",
+    "specific quick win 2",
+    "specific quick win 3"
+  ]
+}}
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an expert digital advertising auditor for businesses in Egypt and the Middle East. Always return valid JSON only, no markdown, no extra text."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.7,
+        max_tokens=1000
+    )
+
+    content = response.choices[0].message.content.strip()
+    content = content.replace("```json", "").replace("```", "").strip()
+    audit = json.loads(content)
+
+    return audit
+
