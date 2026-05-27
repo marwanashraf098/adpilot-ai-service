@@ -1056,3 +1056,102 @@ Return ONLY a JSON object with no extra text:
     content = content.replace("```json", "").replace("```", "").strip()
     result = json.loads(content)
     return result
+
+class UpdateRagRequest(BaseModel):
+    business_id: str
+    learning: str
+    learning_id: str
+    learning_type: str = "campaign_performance"
+
+@app.post("/update-business-rag")
+def update_business_rag(req: UpdateRagRequest):
+    """Add a new learning to the business RAG"""
+    try:
+        collection = get_or_create_business_collection(req.business_id)
+        # Delete existing doc with same id if exists
+        try:
+            collection.delete(ids=[req.learning_id])
+        except:
+            pass
+        collection.add(
+            documents=[req.learning],
+            ids=[req.learning_id],
+            metadatas=[{"type": req.learning_type}]
+        )
+        return {"status": "success", "learning_id": req.learning_id}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+class AnalyzeCampaignsRequest(BaseModel):
+    business_id: str
+    campaigns: list[Campaign]
+    industry: str = "business"
+
+@app.post("/analyze-campaign-learnings")
+def analyze_campaign_learnings(req: AnalyzeCampaignsRequest):
+    """Analyze campaign performance and extract learnings for RAG"""
+    if not req.campaigns:
+        return {"status": "no_campaigns"}
+
+    campaigns_text = ""
+    for c in req.campaigns:
+        campaigns_text += f"""
+Campaign: {c.name}
+- Status: {c.status}
+- Daily Budget: {c.daily_budget}
+- Spend: {c.spend}
+- Impressions: {c.impressions}
+- Clicks: {c.clicks}
+- CTR: {c.ctr}%
+- CPC: {c.cpc}
+"""
+
+    # Ask GPT-4o to extract learnings
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an expert media buyer. Extract concise campaign performance learnings. Return JSON only."
+            },
+            {
+                "role": "user",
+                "content": f"""Analyze these campaigns for a {req.industry} business in Egypt and extract key learnings.
+
+{campaigns_text}
+
+Return ONLY a JSON array of learning strings. Each learning should be 1-2 sentences capturing what's working, what's not, and performance trends.
+
+Example format:
+["Campaign X has CTR of 2.1% which is above benchmark — this audience and creative combination is working well.",
+ "Campaign Y CPL is EGP 120, above the EGP 60 target — needs new creative or audience adjustment."]
+
+Return 2-4 learnings maximum. No extra text."""
+            }
+        ],
+        temperature=0.3,
+        max_tokens=500
+    )
+
+    content = response.choices[0].message.content.strip()
+    content = content.replace("```json", "").replace("```", "").strip()
+    learnings = json.loads(content)
+
+    # Store each learning in the business RAG
+    collection = get_or_create_business_collection(req.business_id)
+    import time
+    timestamp = str(int(time.time()))
+
+    for i, learning in enumerate(learnings):
+        learning_id = f"campaign_learning_{timestamp}_{i}"
+        try:
+            collection.add(
+                documents=[learning],
+                ids=[learning_id],
+                metadatas=[{"type": "campaign_performance"}]
+            )
+        except:
+            pass
+
+    return {"status": "success", "learnings": learnings, "count": len(learnings)}
