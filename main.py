@@ -221,6 +221,12 @@ class AuditRequest(BaseModel):
     instagram_url: str = ""
     tiktok_url: str = ""
     website_url: str = ""
+    currently_running_ads: str = "unknown"
+    monthly_budget: str = "unknown"
+    pixel_installed: str = "unknown"
+    current_cpl: str = "unknown"
+    ads_experience: str = "unknown"
+    main_goal: str = "unknown"
 
 @app.post("/audit")
 def generate_audit(req: AuditRequest):
@@ -240,23 +246,33 @@ def generate_audit(req: AuditRequest):
     prompt = f"""
 You are an expert digital advertising auditor for businesses in Egypt and the Middle East.
 
-Business Name: {req.business_name}
-Industry: {req.industry}
+Business Information:
+- Business Name: {req.business_name}
+- Industry: {req.industry}
+- Currently running ads: {req.currently_running_ads}
+- Monthly ad budget: {req.monthly_budget}
+- Meta Pixel installed: {req.pixel_installed}
+- Current CPL (cost per lead): {req.current_cpl}
+- Advertising experience: {req.ads_experience}
+- Main goal: {req.main_goal}
+
 Online Presence:
 {presence_text}
 
-Based on the platforms they are on and common patterns for {req.industry} businesses in Egypt, generate a realistic and specific advertising audit.
+Based on this REAL data provided by the business, generate an accurate and specific advertising audit.
+Be direct about what they are doing wrong based on their actual situation.
+If they are not running ads, explain what they are missing.
+If their CPL is high, explain why and what to fix.
+If pixel is not installed, mark that as a critical issue.
 
-Evaluate these 7 areas:
-1. Platform Presence (are they on the right platforms for their industry?)
-2. Ad Account Setup (pixel likely installed, conversion tracking)
-3. Campaign Structure (likely campaign objectives being used)
-4. Audience Targeting (how well they likely target their audience)
-5. Ad Creative Quality (quality of typical ads for this industry)
-6. Budget Efficiency (typical budget waste for this industry)
-7. Overall Strategy (overall advertising maturity)
-
-Be specific to their industry and the platforms they listed. If they have a website, mention pixel tracking. If they have TikTok, mention video creative needs. If they don't have a platform they should be on, mention it as an issue.
+Evaluate these 7 areas with scores based on the real data:
+1. Platform Presence
+2. Ad Account Setup
+3. Campaign Structure
+4. Audience Targeting
+5. Ad Creative Quality
+6. Budget Efficiency
+7. Overall Strategy
 
 Return ONLY a JSON object. No extra text. Format:
 {{
@@ -264,23 +280,23 @@ Return ONLY a JSON object. No extra text. Format:
   "estimated_monthly_waste": "EGP 1,200",
   "missing_platforms": ["TikTok", "Google"],
   "grades": {{
-    "platform_presence": {{ "score": 60, "label": "Needs work", "finding": "specific finding" }},
-    "ad_setup": {{ "score": 60, "label": "Needs work", "finding": "specific finding" }},
-    "campaign_structure": {{ "score": 70, "label": "Average", "finding": "specific finding" }},
-    "audience_targeting": {{ "score": 65, "label": "Average", "finding": "specific finding" }},
-    "ad_creative": {{ "score": 75, "label": "Good", "finding": "specific finding" }},
-    "budget_efficiency": {{ "score": 55, "label": "Needs work", "finding": "specific finding" }},
-    "overall_strategy": {{ "score": 65, "label": "Average", "finding": "specific finding" }}
+    "platform_presence": {{ "score": 60, "label": "Needs work", "finding": "specific finding based on real data" }},
+    "ad_setup": {{ "score": 60, "label": "Needs work", "finding": "specific finding based on real data" }},
+    "campaign_structure": {{ "score": 70, "label": "Average", "finding": "specific finding based on real data" }},
+    "audience_targeting": {{ "score": 65, "label": "Average", "finding": "specific finding based on real data" }},
+    "ad_creative": {{ "score": 75, "label": "Good", "finding": "specific finding based on real data" }},
+    "budget_efficiency": {{ "score": 55, "label": "Needs work", "finding": "specific finding based on real data" }},
+    "overall_strategy": {{ "score": 65, "label": "Average", "finding": "specific finding based on real data" }}
   }},
   "top_issues": [
-    "specific issue 1",
-    "specific issue 2",
-    "specific issue 3"
+    "specific issue based on real data 1",
+    "specific issue based on real data 2",
+    "specific issue based on real data 3"
   ],
   "quick_wins": [
-    "specific quick win 1",
-    "specific quick win 2",
-    "specific quick win 3"
+    "specific quick win based on real data 1",
+    "specific quick win based on real data 2",
+    "specific quick win based on real data 3"
   ]
 }}
 """
@@ -306,4 +322,3 @@ Return ONLY a JSON object. No extra text. Format:
     audit = json.loads(content)
 
     return audit
-
