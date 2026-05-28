@@ -771,6 +771,17 @@ class AuditRequest(BaseModel):
     current_cpl: str = "unknown"
     ads_experience: str = "unknown"
     main_goal: str = "unknown"
+    scanned_description: str = ""
+    scanned_services: str = ""
+    scanned_target_audience: str = ""
+    unique_selling_point: str = ""
+    average_price: str = ""
+    conversion_rate: str = ""
+    monthly_customers_from_ads: str = ""
+    customer_retention: str = ""
+    monthly_revenue: str = ""
+    revenue_from_ads_pct: str = ""
+
 
 @app.post("/audit")
 def generate_audit(req: AuditRequest):
@@ -787,6 +798,128 @@ def generate_audit(req: AuditRequest):
 
     presence_text = "\n".join(presence) if presence else "No links provided"
 
+    # Build scanned business info
+    scanned_info = ""
+    if req.scanned_description:
+        scanned_info += f"\nScanned business description: {req.scanned_description}"
+    if req.scanned_services:
+        scanned_info += f"\nScanned services/products: {req.scanned_services}"
+    if req.scanned_target_audience:
+        scanned_info += f"\nScanned target audience: {req.scanned_target_audience}"
+    if req.unique_selling_point:
+        scanned_info += f"\nUnique selling point: {req.unique_selling_point}"
+
+    # Build financial analysis
+    financial_analysis = ""
+    if req.average_price:
+        financial_analysis += f"\n- Average product/service price: EGP {req.average_price}"
+    if req.monthly_revenue:
+        financial_analysis += f"\n- Monthly total revenue: EGP {req.monthly_revenue}"
+    if req.conversion_rate:
+        financial_analysis += f"\n- Lead to customer conversion rate: {req.conversion_rate}"
+    if req.monthly_customers_from_ads:
+        financial_analysis += f"\n- Monthly new customers from ads: {req.monthly_customers_from_ads}"
+    if req.customer_retention:
+        financial_analysis += f"\n- Customer retention/frequency: {req.customer_retention}"
+    if req.revenue_from_ads_pct:
+        financial_analysis += f"\n- Revenue from ads: {req.revenue_from_ads_pct}"
+
+    # Calculate ROAS if we have enough data
+    roas_analysis = ""
+    try:
+        if req.monthly_revenue and req.monthly_budget and req.revenue_from_ads_pct and req.revenue_from_ads_pct != "I don't know":
+            revenue = float(req.monthly_revenue)
+            budget_map = {
+                "Under EGP 1,000": 700,
+                "EGP 1,000–3,000": 2000,
+                "EGP 3,000–10,000": 6500,
+                "EGP 10,000–30,000": 20000,
+                "Over EGP 30,000": 35000,
+            }
+            ad_spend = budget_map.get(req.monthly_budget, 0)
+            pct_map = {
+                "Less than 20%": 0.1,
+                "20–40%": 0.3,
+                "40–60%": 0.5,
+                "60–80%": 0.7,
+                "Over 80%": 0.85
+            }
+            pct = pct_map.get(req.revenue_from_ads_pct, 0.5)
+            revenue_from_ads = revenue * pct
+            if ad_spend > 0:
+                roas = revenue_from_ads / ad_spend
+                roas_label = "POOR — ads are losing money" if roas < 2 else "AVERAGE — needs improvement" if roas < 4 else "GOOD — consider scaling"
+                roas_analysis = f"\nCalculated ROAS: {roas:.1f}x (Revenue from ads: EGP {revenue_from_ads:.0f} / Ad spend: EGP {ad_spend:.0f}) — {roas_label}"
+
+        if req.average_price and req.monthly_budget and req.monthly_customers_from_ads:
+            avg_price = float(req.average_price)
+            budget_map = {
+                "Under EGP 1,000": 700, "EGP 1,000–3,000": 2000,
+                "EGP 3,000–10,000": 6500, "EGP 10,000–30,000": 20000,
+                "Over EGP 30,000": 35000,
+            }
+            customers_map = {
+                "0": 0, "1–5": 3, "5–20": 12, "20–50": 35,
+                "50–100": 75, "Over 100": 120
+            }
+            ad_spend = budget_map.get(req.monthly_budget, 0)
+            customers = customers_map.get(req.monthly_customers_from_ads, 0)
+            if customers > 0 and ad_spend > 0:
+                cost_per_customer = ad_spend / customers
+                roi = ((avg_price - cost_per_customer) / cost_per_customer) * 100
+                roas_analysis += f"\nCost per customer: EGP {cost_per_customer:.0f} vs average price EGP {avg_price:.0f} — ROI: {roi:.0f}%"
+                if cost_per_customer > avg_price:
+                    roas_analysis += " — LOSING MONEY on every customer"
+                elif cost_per_customer > avg_price * 0.3:
+                    roas_analysis += " — High acquisition cost, needs optimization"
+                else:
+                    roas_analysis += " — Healthy acquisition cost"
+    except Exception as e:
+        print(f"ROAS calculation error: {e}")
+
+    # Calculate waste in Python — reliable formula
+    budget_midpoints = {
+        "Under EGP 1,000": 700,
+        "EGP 1,000–3,000": 2000,
+        "EGP 3,000–10,000": 6500,
+        "EGP 10,000–30,000": 20000,
+        "Over EGP 30,000": 35000,
+        "Not running ads": 0,
+    }
+    budget = budget_midpoints.get(req.monthly_budget, 0)
+
+    waste_pct = 0
+    if req.pixel_installed == "No":
+        waste_pct += 35
+    elif req.pixel_installed == "I don't know":
+        waste_pct += 20
+    if req.current_cpl == "Over EGP 150":
+        waste_pct += 40
+    elif req.current_cpl == "EGP 70–150":
+        waste_pct += 25
+    elif req.current_cpl == "I don't track this":
+        waste_pct += 30
+    if req.ads_experience in ["Never", "Less than 3 months"]:
+        waste_pct += 20
+    if req.monthly_budget == "Under EGP 1,000":
+        waste_pct += 15
+    if req.conversion_rate == "Less than 5%":
+        waste_pct += 25
+    elif req.conversion_rate == "I don't know":
+        waste_pct += 15
+    has_facebook = bool(req.facebook_page_url)
+    has_instagram = bool(req.instagram_url)
+    if not has_facebook and not has_instagram:
+        waste_pct += 20
+    elif not has_facebook or not has_instagram:
+        waste_pct += 10
+
+    waste_pct = min(waste_pct, 80)
+    estimated_waste = round((budget * waste_pct / 100) / 100) * 100
+    waste_str = f"EGP {estimated_waste:,}" if estimated_waste > 0 else "EGP 0 (not running ads)"
+
+    print(f"WASTE CALC: budget={budget}, waste_pct={waste_pct}, waste_str={waste_str}")
+
     prompt = f"""
 You are an expert digital advertising auditor for businesses in Egypt and the Middle East.
 
@@ -802,45 +935,52 @@ Business Information:
 
 Online Presence:
 {presence_text}
+{scanned_info if scanned_info else ""}
 
-Based on this REAL data provided by the business, generate an accurate and specific advertising audit.
-Be direct about what they are doing wrong based on their actual situation.
-If they are not running ads, explain what they are missing.
-If their CPL is high, explain why and what to fix.
-If pixel is not installed, mark that as a critical issue.
+Financial Data:
+{financial_analysis if financial_analysis else "Not provided"}
+{roas_analysis if roas_analysis else ""}
 
-Evaluate these 7 areas with scores based on the real data:
+Based on ALL this REAL data, generate an accurate and specific advertising audit.
+- Use the scanned business info to reference actual products/services
+- Use the financial data to assess real profitability
+- If ROAS is calculated, reference it specifically in budget_efficiency finding
+- If cost per customer exceeds average price, flag it as critical
+- If pixel is not installed, mark as critical
+- Reference specific numbers from the financial data in your findings
+
+Evaluate these 7 areas:
 1. Platform Presence
 2. Ad Account Setup
 3. Campaign Structure
 4. Audience Targeting
 5. Ad Creative Quality
-6. Budget Efficiency
+6. Budget Efficiency (use ROAS and profitability data here)
 7. Overall Strategy
 
 Return ONLY a JSON object. No extra text. Format:
 {{
   "overall_score": 65,
-  "estimated_monthly_waste": "EGP 1,200",
+  "estimated_monthly_waste": "PLACEHOLDER",
   "missing_platforms": ["TikTok", "Google"],
   "grades": {{
-    "platform_presence": {{ "score": 60, "label": "Needs work", "finding": "specific finding based on real data" }},
-    "ad_setup": {{ "score": 60, "label": "Needs work", "finding": "specific finding based on real data" }},
-    "campaign_structure": {{ "score": 70, "label": "Average", "finding": "specific finding based on real data" }},
-    "audience_targeting": {{ "score": 65, "label": "Average", "finding": "specific finding based on real data" }},
-    "ad_creative": {{ "score": 75, "label": "Good", "finding": "specific finding based on real data" }},
-    "budget_efficiency": {{ "score": 55, "label": "Needs work", "finding": "specific finding based on real data" }},
-    "overall_strategy": {{ "score": 65, "label": "Average", "finding": "specific finding based on real data" }}
+    "platform_presence": {{ "score": 60, "label": "Needs work", "finding": "specific finding" }},
+    "ad_setup": {{ "score": 60, "label": "Needs work", "finding": "specific finding" }},
+    "campaign_structure": {{ "score": 70, "label": "Average", "finding": "specific finding" }},
+    "audience_targeting": {{ "score": 65, "label": "Average", "finding": "specific finding" }},
+    "ad_creative": {{ "score": 75, "label": "Good", "finding": "specific finding" }},
+    "budget_efficiency": {{ "score": 55, "label": "Needs work", "finding": "specific finding with ROAS data" }},
+    "overall_strategy": {{ "score": 65, "label": "Average", "finding": "specific finding" }}
   }},
   "top_issues": [
-    "specific issue based on real data 1",
-    "specific issue based on real data 2",
-    "specific issue based on real data 3"
+    "specific issue with numbers from financial data",
+    "specific issue referencing actual situation",
+    "specific issue referencing actual situation"
   ],
   "quick_wins": [
-    "specific quick win based on real data 1",
-    "specific quick win based on real data 2",
-    "specific quick win based on real data 3"
+    "specific quick win with expected impact in EGP",
+    "specific quick win with expected impact",
+    "specific quick win with expected impact"
   ]
 }}
 """
@@ -850,7 +990,7 @@ Return ONLY a JSON object. No extra text. Format:
         messages=[
             {
                 "role": "system",
-                "content": "You are an expert digital advertising auditor for businesses in Egypt and the Middle East. Always return valid JSON only, no markdown, no extra text."
+                "content": "You are an expert digital advertising auditor for businesses in Egypt and the Middle East. Always return valid JSON only, no markdown, no extra text. Make findings specific and use the financial data provided."
             },
             {
                 "role": "user",
@@ -858,12 +998,15 @@ Return ONLY a JSON object. No extra text. Format:
             }
         ],
         temperature=0.7,
-        max_tokens=1000
+        max_tokens=1200
     )
 
     content = response.choices[0].message.content.strip()
     content = content.replace("```json", "").replace("```", "").strip()
     audit = json.loads(content)
+
+    # Override waste with Python-calculated value — reliable
+    audit["estimated_monthly_waste"] = waste_str
 
     return audit
 
