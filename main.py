@@ -877,6 +877,7 @@ def generate_audit(req: AuditRequest):
     except Exception as e:
         print(f"ROAS calculation error: {e}")
 
+    
     # Calculate waste in Python — reliable formula
     budget_midpoints = {
         "Under EGP 1,000": 700,
@@ -920,7 +921,8 @@ def generate_audit(req: AuditRequest):
 
     print(f"WASTE CALC: budget={budget}, waste_pct={waste_pct}, waste_str={waste_str}")
     print(f"ROAS DEBUG: monthly_budget='{req.monthly_budget}', ad_spend={ad_spend}, monthly_revenue={req.monthly_revenue}, revenue_pct='{req.revenue_from_ads_pct}'")
-
+    print(f"ROAS DEBUG: budget_key='{req.monthly_budget}' -> ad_spend={ad_spend}")
+    print(f"ROAS DEBUG: revenue={req.monthly_revenue}, pct_key='{req.revenue_from_ads_pct}' -> pct={pct}, revenue_from_ads={revenue_from_ads}, roas={roas:.2f}")
     prompt = f"""
 You are an expert digital advertising auditor for businesses in Egypt and the Middle East.
 
