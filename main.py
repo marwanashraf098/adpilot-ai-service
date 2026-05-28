@@ -783,6 +783,10 @@ class AuditRequest(BaseModel):
     revenue_from_ads_pct: str = ""
 
 
+def normalize_budget(budget_str):
+    return budget_str.replace('–', '-').replace('—', '-').strip()
+
+
 @app.post("/audit")
 def generate_audit(req: AuditRequest):
     # Build presence summary
@@ -795,7 +799,6 @@ def generate_audit(req: AuditRequest):
         presence.append(f"TikTok: {req.tiktok_url}")
     if req.website_url:
         presence.append(f"Website: {req.website_url}")
-
     presence_text = "\n".join(presence) if presence else "No links provided"
 
     # Build scanned business info
@@ -824,46 +827,49 @@ def generate_audit(req: AuditRequest):
     if req.revenue_from_ads_pct:
         financial_analysis += f"\n- Revenue from ads: {req.revenue_from_ads_pct}"
 
-    # Calculate ROAS if we have enough data
+    # Budget midpoints with normalized keys
+    budget_midpoints = {
+        "Under EGP 3,000": 1500,
+        "EGP 3,000-10,000": 6500,
+        "EGP 10,000-30,000": 20000,
+        "EGP 30,000-100,000": 65000,
+        "EGP 100,000-300,000": 200000,
+        "Over EGP 300,000": 350000,
+        "Not running ads": 0,
+    }
+
+    # Calculate ROAS
     roas_analysis = ""
     try:
         if req.monthly_revenue and req.monthly_budget and req.revenue_from_ads_pct and req.revenue_from_ads_pct != "I don't know":
             revenue = float(req.monthly_revenue)
-            budget_map = {
-                "Under EGP 1,000": 700,
-                "EGP 1,000–3,000": 2000,
-                "EGP 3,000–10,000": 6500,
-                "EGP 10,000–30,000": 20000,
-                "Over EGP 30,000": 35000,
-            }
-            ad_spend = budget_map.get(req.monthly_budget, 0)
+            ad_spend = budget_midpoints.get(normalize_budget(req.monthly_budget), 0)
             pct_map = {
                 "Less than 20%": 0.1,
-                "20–40%": 0.3,
-                "40–60%": 0.5,
-                "60–80%": 0.7,
+                "20-40%": 0.3,
+                "40-60%": 0.5,
+                "60-80%": 0.7,
                 "Over 80%": 0.85
             }
-            pct = pct_map.get(req.revenue_from_ads_pct, 0.5)
+            normalized_pct = normalize_budget(req.revenue_from_ads_pct)
+            pct = pct_map.get(normalized_pct, 0.5)
             revenue_from_ads = revenue * pct
+            print(f"ROAS DEBUG: budget_key='{normalize_budget(req.monthly_budget)}' -> ad_spend={ad_spend}")
+            print(f"ROAS DEBUG: revenue={revenue}, pct_key='{normalized_pct}' -> pct={pct}, revenue_from_ads={revenue_from_ads}")
             if ad_spend > 0:
                 roas = revenue_from_ads / ad_spend
+                print(f"ROAS DEBUG: roas={roas:.2f}")
                 roas_label = "POOR — ads are losing money" if roas < 2 else "AVERAGE — needs improvement" if roas < 4 else "GOOD — consider scaling"
                 roas_analysis = f"\nCalculated ROAS: {roas:.1f}x (Revenue from ads: EGP {revenue_from_ads:.0f} / Ad spend: EGP {ad_spend:.0f}) — {roas_label}"
 
         if req.average_price and req.monthly_budget and req.monthly_customers_from_ads:
             avg_price = float(req.average_price)
-            budget_map = {
-                "Under EGP 1,000": 700, "EGP 1,000–3,000": 2000,
-                "EGP 3,000–10,000": 6500, "EGP 10,000–30,000": 20000,
-                "Over EGP 30,000": 35000,
-            }
+            ad_spend = budget_midpoints.get(normalize_budget(req.monthly_budget), 0)
             customers_map = {
-                "0": 0, "1–5": 3, "5–20": 12, "20–50": 35,
-                "50–100": 75, "Over 100": 120
+                "0": 0, "1-5": 3, "5-20": 12, "20-50": 35,
+                "50-100": 75, "Over 100": 120
             }
-            ad_spend = budget_map.get(req.monthly_budget, 0)
-            customers = customers_map.get(req.monthly_customers_from_ads, 0)
+            customers = customers_map.get(normalize_budget(req.monthly_customers_from_ads), 0)
             if customers > 0 and ad_spend > 0:
                 cost_per_customer = ad_spend / customers
                 roi = ((avg_price - cost_per_customer) / cost_per_customer) * 100
@@ -877,32 +883,24 @@ def generate_audit(req: AuditRequest):
     except Exception as e:
         print(f"ROAS calculation error: {e}")
 
-    
-    # Calculate waste in Python — reliable formula
-    budget_midpoints = {
-        "Under EGP 1,000": 700,
-        "EGP 1,000–3,000": 2000,
-        "EGP 3,000–10,000": 6500,
-        "EGP 10,000–30,000": 20000,
-        "Over EGP 30,000": 35000,
-        "Not running ads": 0,
-    }
-    budget = budget_midpoints.get(req.monthly_budget, 0)
-
+    # Calculate waste in Python
+    budget = budget_midpoints.get(normalize_budget(req.monthly_budget), 0)
     waste_pct = 0
     if req.pixel_installed == "No":
         waste_pct += 35
     elif req.pixel_installed == "I don't know":
         waste_pct += 20
-    if req.current_cpl == "Over EGP 150":
+    if req.current_cpl == "Over EGP 1,000":
         waste_pct += 40
-    elif req.current_cpl == "EGP 70–150":
+    elif req.current_cpl == "EGP 300-1,000" or req.current_cpl == "EGP 300–1,000":
         waste_pct += 25
+    elif req.current_cpl == "EGP 100-300" or req.current_cpl == "EGP 100–300":
+        waste_pct += 10
     elif req.current_cpl == "I don't track this":
         waste_pct += 30
     if req.ads_experience in ["Never", "Less than 3 months"]:
         waste_pct += 20
-    if req.monthly_budget == "Under EGP 1,000":
+    if normalize_budget(req.monthly_budget) == "Under EGP 3,000":
         waste_pct += 15
     if req.conversion_rate == "Less than 5%":
         waste_pct += 25
@@ -914,15 +912,11 @@ def generate_audit(req: AuditRequest):
         waste_pct += 20
     elif not has_facebook or not has_instagram:
         waste_pct += 10
-
     waste_pct = min(waste_pct, 80)
     estimated_waste = round((budget * waste_pct / 100) / 100) * 100
     waste_str = f"EGP {estimated_waste:,}" if estimated_waste > 0 else "EGP 0 (not running ads)"
+    print(f"WASTE DEBUG: budget={budget}, waste_pct={waste_pct}%, waste_str={waste_str}")
 
-    print(f"WASTE CALC: budget={budget}, waste_pct={waste_pct}, waste_str={waste_str}")
-    print(f"ROAS DEBUG: monthly_budget='{req.monthly_budget}', ad_spend={ad_spend}, monthly_revenue={req.monthly_revenue}, revenue_pct='{req.revenue_from_ads_pct}'")
-    print(f"ROAS DEBUG: budget_key='{req.monthly_budget}' -> ad_spend={ad_spend}")
-    print(f"ROAS DEBUG: revenue={req.monthly_revenue}, pct_key='{req.revenue_from_ads_pct}' -> pct={pct}, revenue_from_ads={revenue_from_ads}, roas={roas:.2f}")
     prompt = f"""
 You are an expert digital advertising auditor for businesses in Egypt and the Middle East.
 
@@ -950,7 +944,7 @@ Based on ALL this REAL data, generate an accurate and specific advertising audit
 - If ROAS is calculated, reference it specifically in budget_efficiency finding
 - If cost per customer exceeds average price, flag it as critical
 - If pixel is not installed, mark as critical
-- Reference specific numbers from the financial data in your findings
+- Reference specific EGP numbers from the financial data in your findings
 
 Evaluate these 7 areas:
 1. Platform Presence
@@ -976,12 +970,12 @@ Return ONLY a JSON object. No extra text. Format:
     "overall_strategy": {{ "score": 65, "label": "Average", "finding": "specific finding" }}
   }},
   "top_issues": [
-    "specific issue with numbers from financial data",
+    "specific issue with EGP numbers",
     "specific issue referencing actual situation",
     "specific issue referencing actual situation"
   ],
   "quick_wins": [
-    "specific quick win with expected impact in EGP",
+    "specific quick win with expected EGP impact",
     "specific quick win with expected impact",
     "specific quick win with expected impact"
   ]
@@ -993,7 +987,7 @@ Return ONLY a JSON object. No extra text. Format:
         messages=[
             {
                 "role": "system",
-                "content": "You are an expert digital advertising auditor for businesses in Egypt and the Middle East. Always return valid JSON only, no markdown, no extra text. Make findings specific and use the financial data provided."
+                "content": "You are an expert digital advertising auditor for businesses in Egypt and the Middle East. Always return valid JSON only, no markdown, no extra text."
             },
             {
                 "role": "user",
@@ -1007,10 +1001,7 @@ Return ONLY a JSON object. No extra text. Format:
     content = response.choices[0].message.content.strip()
     content = content.replace("```json", "").replace("```", "").strip()
     audit = json.loads(content)
-
-    # Override waste with Python-calculated value — reliable
     audit["estimated_monthly_waste"] = waste_str
-
     return audit
 
 
