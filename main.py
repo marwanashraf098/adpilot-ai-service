@@ -633,25 +633,77 @@ class Campaign(BaseModel):
     daily_budget: float = 0
     impressions: int = 0
 
+class AdSetData(BaseModel):
+    id: str = ""
+    name: str
+    status: str
+    spend: float = 0
+    clicks: int = 0
+    ctr: float = 0
+    cpc: float = 0
+    impressions: int = 0
+    optimization_goal: str = ""
+    min_age: int = 0
+    max_age: int = 0
+    targeting: str = ""
+
+class AdData(BaseModel):
+    id: str = ""
+    name: str
+    status: str
+    spend: float = 0
+    clicks: int = 0
+    ctr: float = 0
+    cpc: float = 0
+    impressions: int = 0
+    creative_format: str = ""
+    headline: str = ""
+    body: str = ""
+
+class CampaignWithDetails(BaseModel):
+    name: str
+    status: str
+    spend: float = 0
+    clicks: int = 0
+    ctr: float = 0
+    cpc: float = 0
+    daily_budget: float = 0
+    impressions: int = 0
+    ad_sets: list[AdSetData] = []
+
 class RecommendationRequest(BaseModel):
-    campaigns: list[Campaign]
+    campaigns: list[CampaignWithDetails]
     industry: str
     target_cpl: float = 50
     business_id: str = ""
 
 @app.post("/generate-recommendations")
 def generate_recommendations(req: RecommendationRequest):
-    campaigns_text = ""
+    # Build full context text
+    full_context = ""
     for i, c in enumerate(req.campaigns):
-        campaigns_text += f"""
-Campaign {i+1}: {c.name}
+        full_context += f"""
+CAMPAIGN {i+1}: {c.name}
 - Status: {c.status}
-- Daily Budget: ${c.daily_budget}
-- Total Spend: ${c.spend}
+- Daily Budget: EGP {c.daily_budget}
+- Total Spend: EGP {c.spend}
 - Impressions: {c.impressions}
 - Clicks: {c.clicks}
 - CTR: {c.ctr}%
-- CPC: ${c.cpc}
+- CPC: EGP {c.cpc}
+"""
+        for j, adset in enumerate(c.ad_sets):
+            full_context += f"""
+  AD SET {j+1}: {adset.name}
+  - Status: {adset.status}
+  - Spend: EGP {adset.spend}
+  - Impressions: {adset.impressions}
+  - Clicks: {adset.clicks}
+  - CTR: {adset.ctr}%
+  - CPC: EGP {adset.cpc}
+  - Optimization: {adset.optimization_goal}
+  - Age range: {adset.min_age}-{adset.max_age}
+  - Targeting: {adset.targeting[:200] if adset.targeting else 'N/A'}
 """
 
     # Query RAG for context
@@ -662,24 +714,36 @@ Campaign {i+1}: {c.name}
         strategy_context = query_strategy_rag(f"campaign optimization for {req.industry}", req.industry)
 
     prompt = f"""
-You are an expert media buyer analyzing Facebook ad campaigns for a {req.industry} business in Egypt.
+You are an expert media buyer analyzing Facebook ad campaigns for a {req.industry} business in Egypt and the Middle East.
+All monetary values are in Egyptian Pounds (EGP). Never use $ or USD — always use EGP.
 The business target CPL is EGP {req.target_cpl}.
 
+Egypt benchmarks:
+- Good CTR: above 1.5% — Average: 0.5-1.5% — Poor: below 0.5%
+- Good CPC: below EGP 10 — Average: EGP 10-30 — Poor: above EGP 30
+- Good CPL: below EGP 50 — Average: EGP 50-100 — Poor: above EGP 100
+- Minimum daily budget: EGP 50/day to exit learning phase
+
 {f"Business context: {business_context}" if business_context else ""}
-{f"Expert strategy knowledge: {strategy_context}" if strategy_context else ""}
+{f"Expert Egypt/MENA strategy: {strategy_context}" if strategy_context else ""}
 
-Current campaigns:
-{campaigns_text}
+Full campaign data including ad sets:
+{full_context}
 
-Based on the campaign data AND the business context and expert knowledge above, generate 3 specific actionable recommendations.
-Be specific to this business — use their industry, city, competitors, and goals.
+Generate 5 specific actionable recommendations covering ALL levels:
+- At least 1 recommendation about overall campaign strategy
+- At least 1 recommendation about ad set targeting or budget
+- At least 1 recommendation about specific ad performance
+- Use actual names, EGP numbers, and percentages from the data
+- Compare against Egypt benchmarks
 
-Return ONLY a JSON array with exactly 3 objects. No extra text. Format:
+Return ONLY a JSON array with exactly 5 objects. No extra text:
 [
   {{
     "type": "warning|success|info",
+    "level": "campaign|adset|ad",
     "title": "short action title",
-    "reasoning": "one sentence explanation based on the data and business context",
+    "reasoning": "specific explanation using actual names and EGP values",
     "confidence": 85
   }}
 ]
@@ -688,18 +752,20 @@ Return ONLY a JSON array with exactly 3 objects. No extra text. Format:
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "You are an expert media buyer for Egypt and MENA. Always return valid JSON only."},
+            {
+                "role": "system",
+                "content": "You are an expert media buyer for Egypt and MENA. All monetary values must be in EGP. Never use $ or USD. Always return valid JSON only."
+            },
             {"role": "user", "content": prompt}
         ],
         temperature=0.7,
-        max_tokens=800
+        max_tokens=1200
     )
 
     content = response.choices[0].message.content.strip()
     content = content.replace("```json", "").replace("```", "").strip()
     recommendations = json.loads(content)
     return {"recommendations": recommendations}
-
 
 
 class ChatMessage(BaseModel):
