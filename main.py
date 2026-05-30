@@ -1358,3 +1358,90 @@ Return 2-4 learnings maximum. No extra text."""
             pass
 
     return {"status": "success", "learnings": learnings, "count": len(learnings)}
+
+
+class CreateCampaignRequest(BaseModel):
+    business_id: str
+    industry: str = "business"
+    goal: str
+    target_audience: str
+    daily_budget: float
+    duration_days: int = 30
+    offer: str = ""
+    city: str = ""
+
+@app.post("/generate-campaign-strategy")
+def generate_campaign_strategy(req: CreateCampaignRequest):
+    # Query both RAGs
+    business_context = query_business_rag(req.business_id, f"campaign strategy for {req.goal}")
+    strategy_context = query_strategy_rag(f"campaign creation {req.goal} {req.industry} Egypt", req.industry)
+
+    prompt = f"""
+You are an expert Meta media buyer creating a campaign for a {req.industry} business in Egypt.
+
+Business context:
+{business_context if business_context else "No business context available"}
+
+Expert strategy knowledge:
+{strategy_context if strategy_context else "No strategy context available"}
+
+Campaign brief:
+- Goal: {req.goal}
+- Target audience: {req.target_audience}
+- Daily budget: EGP {req.daily_budget}
+- Duration: {req.duration_days} days
+- Offer: {req.offer if req.offer else "No specific offer"}
+- City: {req.city if req.city else "Egypt"}
+
+Generate a complete Meta campaign strategy. Return ONLY a JSON object:
+{{
+  "campaign_name": "descriptive campaign name",
+  "objective": "one of: OUTCOME_LEADS, OUTCOME_SALES, OUTCOME_TRAFFIC, OUTCOME_AWARENESS, OUTCOME_ENGAGEMENT",
+  "ad_set_name": "descriptive ad set name",
+  "optimization_goal": "one of: LEAD_GENERATION, OFFSITE_CONVERSIONS, LINK_CLICKS, REACH, IMPRESSIONS",
+  "targeting": {{
+    "age_min": 25,
+    "age_max": 45,
+    "genders": [1, 2],
+    "geo_locations": {{
+      "cities": [
+        {{"country": "EG", "name": "Cairo", "region": "Cairo Governorate", "radius": 25, "distance_unit": "mile"}}
+      ]
+    }},
+    "flexible_spec": [
+      {{
+        "interests": [
+          {{"id": "6003139266461", "name": "relevant interest 1"}},
+          {{"id": "6003397425735", "name": "relevant interest 2"}}
+        ]
+      }}
+    ]
+  }},
+  "daily_budget": {req.daily_budget},
+  "ad_copy": {{
+    "headline": "compelling headline max 40 chars",
+    "body": "engaging ad body 2-3 sentences",
+    "cta": "one of: LEARN_MORE, SIGN_UP, GET_QUOTE, CONTACT_US, BOOK_NOW"
+  }},
+  "strategy_reasoning": "2-3 sentences explaining why this strategy will work for this business",
+  "estimated_cpl": "estimated cost per lead in EGP based on Egypt benchmarks",
+  "estimated_reach": "estimated weekly reach"
+}}
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an expert Meta media buyer for Egypt and MENA. Return valid JSON only. Use realistic Egypt-specific targeting and benchmarks."
+            },
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.4,
+        max_tokens=1500
+    )
+
+    content = response.choices[0].message.content.strip()
+    content = content.replace("```json", "").replace("```", "").strip()
+    return json.loads(content)
