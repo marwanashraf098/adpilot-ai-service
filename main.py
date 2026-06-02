@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI , HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from openai import OpenAI
@@ -1445,3 +1445,39 @@ Generate a complete Meta campaign strategy. Return ONLY a JSON object:
     content = response.choices[0].message.content.strip()
     content = content.replace("```json", "").replace("```", "").strip()
     return json.loads(content)
+
+class GenerateImageRequest(BaseModel):
+    prompt: str
+    business_id: str = ""
+
+@app.post("/generate-image")
+async def generate_image(req: GenerateImageRequest):
+    try:
+        # Query business RAG to enhance the prompt
+        business_context = ""
+        if req.business_id:
+            business_context = query_business_rag(req.business_id, "ad creative visual style brand")
+
+        # Enhance prompt with business context
+        enhanced_prompt = f"""
+Professional Facebook/Instagram advertisement image.
+{req.prompt}
+Style: Clean, modern, high quality, suitable for social media advertising.
+No text overlays. Photorealistic. Well-lit. Professional composition.
+"""
+        if business_context:
+            enhanced_prompt += f"\nBrand context: {business_context[:200]}"
+
+        response = client.images.generate(
+            model="dall-e-3",
+            prompt=enhanced_prompt,
+            size="1024x1024",
+            quality="standard",
+            n=1,
+        )
+
+        image_url = response.data[0].url
+        return {"image_url": image_url, "revised_prompt": response.data[0].revised_prompt}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image generation failed: {str(e)}")
