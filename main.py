@@ -1481,3 +1481,64 @@ No text overlays. Photorealistic. Well-lit. Professional composition.
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Image generation failed: {str(e)}")
+
+class CopyVariantsRequest(BaseModel):
+    business_id: str = ""
+    industry: str = "business"
+    goal: str = ""
+    target_audience: str = ""
+    offer: str = ""
+
+@app.post("/generate-copy-variants")
+def generate_copy_variants(req: CopyVariantsRequest):
+    business_context = ""
+    strategy_context = ""
+    if req.business_id:
+        business_context = query_business_rag(req.business_id, "ad copy headlines body text")
+        strategy_context = query_strategy_rag(f"ad copy for {req.industry} Egypt", req.industry)
+
+    prompt = f"""
+You are an expert Facebook ads copywriter for Egypt and MENA market.
+Business industry: {req.industry}
+Campaign goal: {req.goal}
+Target audience: {req.target_audience}
+Special offer: {req.offer if req.offer else "None"}
+
+{f"Business context: {business_context}" if business_context else ""}
+{f"Expert strategy: {strategy_context}" if strategy_context else ""}
+
+Generate 3 headline variants and 3 body text variants for Facebook ads.
+- Headlines: max 40 characters each, punchy and attention-grabbing
+- Bodies: 2-3 sentences each, benefit-focused, Egypt market context
+- All in English
+- Use EGP for any prices
+- Make each variant distinctly different in angle/hook
+
+Return ONLY a JSON object:
+{{
+  "headlines": [
+    "Headline variant 1",
+    "Headline variant 2", 
+    "Headline variant 3"
+  ],
+  "bodies": [
+    "Body variant 1 text here.",
+    "Body variant 2 text here.",
+    "Body variant 3 text here."
+  ]
+}}
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "You are an expert Facebook ads copywriter for Egypt and MENA. Return valid JSON only."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.8,
+        max_tokens=800
+    )
+
+    content = response.choices[0].message.content.strip()
+    content = content.replace("```json", "").replace("```", "").strip()
+    return json.loads(content)    
