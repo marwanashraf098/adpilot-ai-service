@@ -1541,4 +1541,274 @@ Return ONLY a JSON object:
 
     content = response.choices[0].message.content.strip()
     content = content.replace("```json", "").replace("```", "").strip()
-    return json.loads(content)    
+    return json.loads(content)
+
+
+class CampaignSuggestionsRequest(BaseModel):
+    business_id: str = ""
+    industry: str = "business"
+    existing_campaigns: list = []
+    total_spend: float = 0
+    avg_ctr: float = 0
+
+@app.post("/generate-campaign-suggestions")
+def generate_campaign_suggestions(req: CampaignSuggestionsRequest):
+    business_context = ""
+    strategy_context = ""
+    if req.business_id:
+        business_context = query_business_rag(req.business_id, "campaign ideas growth opportunities")
+        strategy_context = query_strategy_rag(f"campaign ideas for {req.industry} Egypt", req.industry)
+
+    existing = ", ".join([c.get("name", "") for c in req.existing_campaigns]) if req.existing_campaigns else "None"
+    
+    from datetime import datetime
+    current_date = datetime.now().strftime("%B %Y")
+
+    prompt = f"""
+You are an expert Meta media buyer for Egypt and MENA.
+Today's date: {current_date}
+Business industry: {req.industry}
+Existing campaigns: {existing}
+Total spend so far: EGP {req.total_spend}
+Average CTR: {req.avg_ctr}%
+
+{f"Business context: {business_context}" if business_context else ""}
+{f"Expert strategy knowledge: {strategy_context}" if strategy_context else ""}
+
+Generate 4 specific campaign suggestions this business should run next.
+Consider:
+- Gaps in their current campaigns (retargeting, awareness, conversion)
+- UPCOMING Egypt seasonal opportunities based on today's date ({current_date}) — only suggest seasons and events that have NOT happened yet
+- Industry best practices for {req.industry} in Egypt
+- Budget efficiency — suggest campaigns that complement existing ones
+- Current month context: what are Egyptians focused on right now in {current_date}?
+
+Egypt seasonal calendar for reference:
+- January: Winter sales, New Year campaigns
+- February: Valentine's Day
+- March-April: Spring campaigns, sometimes Ramadan
+- April-May: Ramadan (varies by year), Eid Al-Fitr
+- June: Summer begins, school exams end, vacations start
+- July-August: Summer peak, back to school prep
+- September: Back to school, fall campaigns
+- October-November: Pre-holiday season
+- December: Christmas, New Year, winter sales
+
+Today is {current_date} — only suggest what makes sense NOW or in the coming weeks.
+
+Return ONLY a JSON array with exactly 4 objects:
+[
+  {{
+    "title": "Campaign title",
+    "type": "retargeting|awareness|conversion|seasonal|engagement",
+    "description": "One sentence explaining why this campaign will work for them",
+    "goal": "Get more leads|Increase sales|Build brand awareness|Get more website traffic",
+    "suggested_budget": 100,
+    "estimated_cpl": "EGP 30-50",
+    "urgency": "high|medium|low",
+    "reason": "Why now — specific reason based on today being {current_date}"
+  }}
+]
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": f"You are an expert media buyer for Egypt and MENA. Today is {current_date}. You have access to a detailed Egypt seasonal calendar in your knowledge base — use it to suggest only relevant upcoming campaigns. Never suggest holidays or events that have already passed based on today's date. Return valid JSON only."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.7,
+        max_tokens=1200
+    )
+
+    content = response.choices[0].message.content.strip()
+    content = content.replace("```json", "").replace("```", "").strip()
+    return {"suggestions": json.loads(content)}
+
+@app.post("/seed-egypt-calendar")
+def seed_egypt_calendar():
+    egypt_calendar = """
+EGYPT MARKETING SEASONAL CALENDAR 2026-2027
+============================================
+
+ISLAMIC HOLIDAYS (approximate dates, shift ~11 days earlier each year):
+- Ramadan 2026: ~February 18 - March 19, 2026
+- Eid Al-Fitr 2026: ~March 20-23, 2026 (3 days)
+- Eid Al-Adha 2026: ~May 27 - June 1, 2026 (4 days)
+- Islamic New Year 2026: ~June 26, 2026
+- Prophet's Birthday (Mawlid) 2026: ~September 4, 2026
+- Ramadan 2027: ~February 7 - March 8, 2027
+- Eid Al-Fitr 2027: ~March 9-12, 2027
+- Eid Al-Adha 2027: ~May 17-20, 2027
+
+EGYPTIAN NATIONAL HOLIDAYS:
+- New Year's Day: January 1
+- Coptic Christmas: January 7
+- Revolution Day (Jan 25): January 25
+- Sinai Liberation Day: April 25
+- Labour Day: May 1
+- Revolution Day (June 30): June 30
+- Armed Forces Day: October 6
+- Suez Day: October 24
+- National Day: July 23
+
+MONTHLY MARKETING CONTEXT FOR EGYPT:
+
+JANUARY:
+- New Year campaigns, winter sales
+- Coptic Christmas (Jan 7) — gift campaigns for Christian communities
+- Cold weather — indoor activities, gyms peak
+- Post-holiday detox campaigns
+- Best for: Gyms, health, beauty, home
+
+FEBRUARY:
+- Valentine's Day (Feb 14) — gifts, flowers, restaurants
+- Pre-Ramadan preparation begins
+- Ramadan may start late February (check year)
+- Best for: Restaurants, jewellery, gifts, flowers, beauty
+
+MARCH:
+- Ramadan begins (2026: Feb 18 — Mar 19)
+- Iftar and Suhoor campaigns huge
+- Night shopping peaks — ads perform better 8pm-2am
+- Charity and community campaigns
+- Best for: Food delivery, restaurants, fashion, electronics, charity
+
+APRIL:
+- Eid Al-Fitr (2026: ~March 20) — massive spending period
+- Post-Eid slowdown
+- Spring campaigns begin
+- Sham El-Nessim (Egyptian spring holiday, day after Coptic Easter)
+- Best for: Fashion, gifts, travel, outdoor activities
+
+MAY:
+- Labour Day (May 1)
+- Mother's Day in Egypt: 3rd Sunday of March (not May — different from Western)
+- Pre-summer preparations
+- Eid Al-Adha approaches (2026: ~May 27)
+- Best for: Travel, fashion, home, beauty
+
+JUNE:
+- Eid Al-Adha (2026: ~May 27 - June 1) — sacrifice festival, family gatherings
+- Schools finish exams (mid-June)
+- Summer officially begins
+- Islamic New Year (~June 26, 2026)
+- Summer fashion and travel peaks
+- Best for: Travel, fashion, food, summer activities
+
+JULY:
+- Peak summer — Egyptians travel to North Coast, Ain Sokhna, Hurghada
+- Back to school prep begins (late July)
+- Summer sales
+- Best for: Travel, beach, fashion, food delivery, electronics
+
+AUGUST:
+- Back to school season peaks — huge spending on uniforms, supplies, electronics
+- Summer ends, schools start September
+- Ramadan prep if Ramadan is in September (varies by year)
+- Best for: Electronics, fashion, school supplies, stationery
+
+SEPTEMBER:
+- Schools start — back to school winds down
+- Prophet's Birthday (Mawlid, 2026: ~Sep 4) — celebrations, sweets
+- Fall campaigns begin
+- Best for: Education, tutoring, fashion, health
+
+OCTOBER:
+- Armed Forces Day (Oct 6) — national pride campaigns
+- Fall/winter fashion launches
+- Pre-holiday season begins
+- Best for: Fashion, electronics, home, appliances
+
+NOVEMBER:
+- Black Friday (last Friday of November) — massive e-commerce day in Egypt
+- Pre-Ramadan preparation if Ramadan is in winter
+- Winter campaigns begin
+- Best for: Electronics, fashion, home appliances, e-commerce
+
+DECEMBER:
+- Christmas celebrations (expats, Christians — ~10% of population)
+- Coptic Christmas approaches (Jan 7)
+- New Year campaigns
+- End of year sales
+- Best for: Gifts, fashion, restaurants, travel, electronics
+
+INDUSTRY-SPECIFIC PEAKS:
+
+GYMS & FITNESS:
+- Peak 1: January (New Year resolutions) — highest sign-ups of year
+- Peak 2: Post-Ramadan (April/May) — body recovery campaigns
+- Peak 3: Pre-summer (May/June) — beach body campaigns
+- Low season: Ramadan (people fasting, less gym activity)
+- Campaign tip: Offer free trial or first month discount in January and May
+
+CLINICS & MEDICAL:
+- Peak: Back to school (August/September) — checkups for kids
+- Peak: Post-Ramadan — health recovery
+- Peak: Winter (October-December) — flu season
+- Campaign tip: Promote preventive care in August and October
+
+RESTAURANTS & FOOD:
+- Huge peak: Ramadan — iftar reservations, family gatherings
+- Peak: Eid Al-Fitr and Eid Al-Adha — family meals
+- Peak: Summer — outdoor dining, delivery
+- Campaign tip: Ramadan campaigns should start 2 weeks before Ramadan
+
+REAL ESTATE:
+- Peak: Post-Eid — families make big purchases after celebrations
+- Peak: Summer — people relocate before school year
+- Campaign tip: Target newlyweds in April-June (peak wedding season)
+
+E-COMMERCE:
+- Peak: Black Friday (November)
+- Peak: Ramadan — online shopping spikes at night
+- Peak: Back to school (August)
+- Campaign tip: Start Black Friday campaigns 2 weeks early
+
+AUTOMOTIVE:
+- Peak: Post-Eid — big purchases after holiday bonuses
+- Peak: January — new year, new car mentality
+- Campaign tip: Target government employees in January (year-end bonuses)
+
+SALONS & BEAUTY:
+- Peak: Pre-Eid — everyone wants to look good for celebrations
+- Peak: Pre-wedding season (April-June)
+- Peak: Pre-summer (May) — summer prep
+- Campaign tip: Run offers 1 week before Eid
+
+WEDDING SEASON IN EGYPT:
+- Peak season 1: October - December
+- Peak season 2: April - June
+- Low season: Ramadan, Eid periods, summer July-August
+- Related industries: Venues, catering, fashion, photography, beauty
+
+KEY CONSUMER BEHAVIOR IN EGYPT:
+- Egyptians are highly price-sensitive — discounts and offers work extremely well
+- Family-oriented purchasing — campaigns targeting families outperform individual targeting
+- Mobile-first — 95%+ of Facebook users in Egypt use mobile
+- Evening peak — best ad performance 8pm-11pm (especially Ramadan: 10pm-2am)
+- Arabic content performs better for mass market, English for premium/professional segments
+- WhatsApp is the primary communication channel — integrate WhatsApp CTA when possible
+- Installment payments (taqseet) are very popular — highlight if available
+"""
+
+    try:
+        strategy_collection = chroma_client.get_or_create_collection(
+            name="adpilot_strategy_rag",
+            metadata={"description": "Media buying strategies for Egypt and MENA"}
+        )
+
+        strategy_collection.upsert(
+            documents=[egypt_calendar],
+            ids=["egypt_seasonal_calendar_2026_2027"],
+            metadatas=[{
+                "type": "seasonal_calendar",
+                "region": "Egypt",
+                "language": "English",
+                "year": "2026-2027"
+            }]
+        )
+
+        return {"status": "success", "message": "Egypt seasonal calendar added to Strategy RAG"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to seed calendar: {str(e)}")
