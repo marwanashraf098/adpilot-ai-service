@@ -39,474 +39,150 @@ strategy_collection = chroma_client.get_or_create_collection(
 )
 
 def initialize_strategy_rag():
-    """Load media buying strategies into ChromaDB if not already loaded"""
     existing = strategy_collection.count()
     if existing > 0:
         print(f"Strategy RAG already loaded: {existing} documents")
         return
 
     strategies = [
-
-        # ── 2026 META PLATFORM CHANGES ──
-        {
-            "id": "meta_001",
-            "text": "Meta's Andromeda system (2025) fundamentally changed how ads are delivered. One ad now generates hundreds of variations automatically. The algorithm now does targeting — advertisers should focus on creative quality, not audience micro-segmentation. Broad targeting + strong creative outperforms narrow targeting + average creative.",
-            "category": "platform", "industry": "all"
-        },
-        {
-            "id": "meta_002",
-            "text": "Advantage+ campaigns are now Meta's default in 2026. They use AI to automatically optimize targeting, placements, and creative. Best practice: use Advantage+ for scaling proven campaigns, use manual campaigns for testing new audiences and creative. Never use Advantage+ before you have a proven offer.",
-            "category": "platform", "industry": "all"
-        },
-        {
-            "id": "meta_003",
-            "text": "Meta's learning phase in 2026: Some accounts now require only 10 conversions over 3 days to exit learning (down from 50 over 7 days). Never make significant edits during learning phase. Bundle all edits and make them at once to minimize learning resets.",
-            "category": "platform", "industry": "all"
-        },
-        {
-            "id": "meta_004",
-            "text": "Advantage+ Creative (2026): All new Sales, Leads, and App Promotion campaigns launch with AI creative enhancements by default. Meta uses up to 5% of impressions to test enhancement combinations and scales winners automatically. Always provide multiple creative variations — minimum 5 different assets per campaign.",
-            "category": "platform", "industry": "all"
-        },
-        {
-            "id": "meta_005",
-            "text": "AI-generated content disclosure (March 2026): Meta now requires disclosure on ads containing AI-generated or AI-modified content. Skipping this is now the most common reason for ad rejection. Always label AI-generated creatives properly.",
-            "category": "platform", "industry": "all"
-        },
-
-        # ── CAMPAIGN STRUCTURE ──
-        {
-            "id": "str_001",
-            "text": "Modern Meta campaign structure (2026): Consolidate ad sets. Instead of many small ad sets with low budgets, use fewer large ad sets with bigger budgets. Meta's algorithm needs volume to optimize. One campaign, 2-3 ad sets, 5-10 ads per ad set outperforms 10 campaigns with small budgets.",
-            "category": "structure", "industry": "all"
-        },
-        {
-            "id": "str_002",
-            "text": "The Power of Five creative strategy for Advantage+ (2026): Every campaign needs 5 distinct ad types — (1) Problem/Solution Video, (2) High-quality photo, (3) User-Generated Content (UGC), (4) Educational carousel, (5) Testimonial or social proof. The AI identifies which asset attracts each type of customer.",
-            "category": "structure", "industry": "all"
-        },
-        {
-            "id": "str_003",
-            "text": "Full funnel approach: Don't just target purchases or leads. Build campaigns for every stage — cold audience awareness, warm audience consideration, hot audience conversion, and customer retention. Each stage needs different creative and messaging.",
-            "category": "structure", "industry": "all"
-        },
-        {
-            "id": "str_004",
-            "text": "Campaign Budget Optimization (CBO) vs Ad Set Budget (ABO): Use CBO when scaling above EGP 500/day — Meta allocates budget to best performing ad sets automatically. Use ABO when testing new audiences or creatives to ensure each gets enough budget for a fair test.",
-            "category": "structure", "industry": "all"
-        },
-
-        # ── CAMPAIGN OBJECTIVES ──
-        {
-            "id": "obj_001",
-            "text": "For gyms and fitness centers in Egypt, Lead Generation campaigns consistently outperform Traffic and Awareness. Use OUTCOME_LEADS with instant forms. Expected CPL: EGP 30-80 Cairo, EGP 20-60 Alexandria. Always ask for name + phone in the form — not email.",
-            "category": "objectives", "industry": "gym"
-        },
-        {
-            "id": "obj_002",
-            "text": "For clinics and healthcare in Egypt, Lead Generation with phone call optimization works best. Patients prefer calling before booking. Use call ads combined with instant forms. Ask 1-2 qualifying questions in the form. Expected CPL: EGP 40-100.",
-            "category": "objectives", "industry": "clinic"
-        },
-        {
-            "id": "obj_003",
-            "text": "For restaurants in Egypt, Reach and Traffic objectives work better than leads. Focus on awareness and foot traffic. Video ads showing food preparation outperform photos. Boost posts with 1000+ organic reach first, then run paid traffic to those posts.",
-            "category": "objectives", "industry": "restaurant"
-        },
-        {
-            "id": "obj_004",
-            "text": "For e-commerce in Egypt, Catalog Sales (Dynamic Ads) and Conversions outperform Traffic. Install Meta Pixel and set up purchase events before running conversion campaigns. Use Dynamic Product Ads for retargeting abandoned carts. Expected ROAS: 2x-5x.",
-            "category": "objectives", "industry": "ecommerce"
-        },
-        {
-            "id": "obj_005",
-            "text": "For real estate in Egypt, Lead Generation with detailed instant forms works best. Ask for budget range and timeline to qualify leads. Use virtual tour videos instead of static photos. Expected CPL: EGP 100-300 for qualified leads.",
-            "category": "objectives", "industry": "real_estate"
-        },
-        {
-            "id": "obj_006",
-            "text": "For beauty salons in Egypt, Lead Generation for new client acquisition and Reach for retention. Offer a first-visit discount. Before/after photos (with consent) outperform all other creative types. Expected CPL: EGP 25-70.",
-            "category": "objectives", "industry": "salon"
-        },
-
-        # ── AUDIENCE TARGETING (2026) ──
-        {
-            "id": "aud_001",
-            "text": "2026 targeting philosophy: Broad targeting + great creative outperforms narrow targeting. Meta's AI is better at finding your customers than you are. Start broad, let the algorithm learn, then use the data to understand who's actually converting.",
-            "category": "targeting", "industry": "all"
-        },
-        {
-            "id": "aud_002",
-            "text": "For Egyptian businesses, interest-based targeting still works for cold audiences. Stack 3-5 relevant interests. For gyms: fitness + health + weight loss + nutrition. Avoid broad interests like 'sports' — too wide. Narrow interests reduce waste.",
-            "category": "targeting", "industry": "all"
-        },
-        {
-            "id": "aud_003",
-            "text": "Lookalike audiences in Egypt: Build from customer lists of 500+ or website visitors of 1000+ monthly. Use 1-2% lookalike for prospecting, 3-5% for scaling. Lookalikes from buyers outperform lookalikes from page fans by 3x.",
-            "category": "targeting", "industry": "all"
-        },
-        {
-            "id": "aud_004",
-            "text": "Cairo audience segmentation: New Cairo and Maadi = higher purchasing power. Zamalek and Heliopolis = older and premium. 6th October and Giza = younger and price-sensitive. Segment by district for different ad messages and offers.",
-            "category": "targeting", "industry": "all"
-        },
-        {
-            "id": "aud_005",
-            "text": "Retargeting sequence for Egypt: Day 1-3 website visitors see social proof ad. Day 4-7 see offer ad. Day 8-14 see urgency/scarcity ad. This 3-touch sequence improves conversion by 40%. Exclude converters from all retargeting audiences.",
-            "category": "targeting", "industry": "all"
-        },
-        {
-            "id": "aud_006",
-            "text": "Sequential exclusions for advanced funnels: Exclude people who watched 50% of your video from seeing it again — show them the next video instead. Exclude page engagers from cold audience campaigns to avoid overlap and wasted spend.",
-            "category": "targeting", "industry": "all"
-        },
-        {
-            "id": "aud_007",
-            "text": "Facebook penetration in Egypt is 89% as of 2026. Facebook remains the primary platform for family-oriented services and broad demographics. Instagram and TikTok dominate Gen Z and Millennials. WhatsApp is used for closing sales and customer support — not advertising.",
-            "category": "targeting", "industry": "all"
-        },
-
-        # ── BUDGET STRATEGY ──
-        {
-            "id": "bud_001",
-            "text": "Minimum viable budget for testing in Egypt: EGP 50/day per ad set. Below this, Meta's algorithm cannot exit learning phase. For campaigns with multiple ad sets, allocate at least EGP 150/day total.",
-            "category": "budget", "industry": "all"
-        },
-        {
-            "id": "bud_002",
-            "text": "The 20% scaling rule: Never increase daily budget by more than 20% at a time or the campaign re-enters learning phase. Wait 3-4 days between increases. Scaling ladder example: EGP 100 → 120 → 145 → 175 → 210 → 250.",
-            "category": "budget", "industry": "all"
-        },
-        {
-            "id": "bud_003",
-            "text": "Horizontal vs vertical scaling: For aggressive scaling, duplicate winning campaigns (horizontal scaling) rather than increasing budget on one campaign (vertical scaling). This avoids learning phase resets and maintains performance.",
-            "category": "budget", "industry": "all"
-        },
-        {
-            "id": "bud_004",
-            "text": "Budget allocation framework: 70% to proven winning campaigns, 20% to testing new creatives and audiences, 10% to retargeting. Review and rebalance weekly based on CPL performance.",
-            "category": "budget", "industry": "all"
-        },
-        {
-            "id": "bud_005",
-            "text": "During Ramadan in Egypt, CPL drops 20-30% due to increased social media time. Increase budgets 2 weeks before Ramadan. Best ad times: after iftar 8-11pm and suhour 2-4am. Ads with Ramadan-specific messaging (Ramadan Kareem, Eid offers) outperform generic ads by 50%.",
-            "category": "budget", "industry": "all"
-        },
-
-        # ── AD CREATIVE (2026) ──
-        {
-            "id": "cre_001",
-            "text": "Creative quality is the #1 performance variable in 2026, outweighing audience targeting, bidding, and placement. In Meta's Advantage+ system, the creative itself does the targeting — if your ad shows a gym, the AI finds fitness people. Focus 80% of effort on creative.",
-            "category": "creative", "industry": "all"
-        },
-        {
-            "id": "cre_002",
-            "text": "Video ads outperform images in Egypt by 30-50% CTR. 15-30 second videos work best. Use captions — 80% of videos are watched without sound. Hook within first 3 seconds is critical. Use text overlay to communicate the main offer without sound.",
-            "category": "creative", "industry": "all"
-        },
-        {
-            "id": "cre_003",
-            "text": "UGC (User Generated Content) is the highest performing ad format in 2026. Real customer reviews, testimonials, and 'before/after' videos outperform polished professional ads by 2-3x. Feels authentic, builds trust, and Meta's algorithm favors content that looks organic.",
-            "category": "creative", "industry": "all"
-        },
-        {
-            "id": "cre_004",
-            "text": "Arabic ads get 40% more engagement than English for Egyptian mass-market businesses. Exception: premium and luxury brands — bilingual ads maintain premium perception. Use Egyptian Arabic dialect (ammiyya) not formal Arabic — it feels more personal.",
-            "category": "creative", "industry": "all"
-        },
-        {
-            "id": "cre_005",
-            "text": "Social proof is the strongest creative element for Egyptian businesses. Include: number of customers served, years in business, certifications, testimonials. Example: 'Over 2,000 clients transformed their body in 3 years'. Numbers build credibility instantly.",
-            "category": "creative", "industry": "all"
-        },
-        {
-            "id": "cre_006",
-            "text": "For gym ads in Egypt, transformation photos (before/after) generate the lowest CPL. Real member results outperform stock photos by 3x. Show the process, not just the result — behind the scenes training footage builds trust.",
-            "category": "creative", "industry": "gym"
-        },
-        {
-            "id": "cre_007",
-            "text": "Urgency and scarcity work well in Egypt: 'Limited spots available', 'Offer ends Friday', 'Only 5 places left this week'. Combine with a specific discount or free offer for best results. Countdown-style language increases CTR by 20-30%.",
-            "category": "creative", "industry": "all"
-        },
-        {
-            "id": "cre_008",
-            "text": "For clinic ads in Egypt, doctor credibility is the #1 conversion factor. Show doctor name, photo, credentials, years of experience. Patient testimonials (with consent) are the second strongest element. Never use stock photos of doctors — real photos convert 2x better.",
-            "category": "creative", "industry": "clinic"
-        },
-        {
-            "id": "cre_009",
-            "text": "Ad creative refresh cadence: Refresh creatives when frequency exceeds 2.5 in 7 days OR when CTR drops more than 30% from its peak. Top brands produce 10-20 new creative variations per month. Creative fatigue is the #1 cause of CPL increase.",
-            "category": "creative", "industry": "all"
-        },
-        {
-            "id": "cre_010",
-            "text": "Hook writing for Egyptian audience: Use questions ('هل تعبت من...' / 'Are you tired of...'), numbers ('3 reasons why your ads are failing'), and local references. First 3 words must stop the scroll. Avoid starting with the business name — start with the customer's problem.",
-            "category": "creative", "industry": "all"
-        },
-
-        # ── SEASONAL CAMPAIGNS (EGYPT) ──
-        {
-            "id": "sea_001",
-            "text": "Ramadan strategy for Egypt: Start 2 weeks before with awareness. First week: launch lead gen with Ramadan offer. Last 10 days (Ashr al-Akhira): urgency campaign. After Eid Al-Fitr: reactivation campaign. CPL is 20-30% lower during Ramadan than any other time.",
-            "category": "seasonal", "industry": "all"
-        },
-        {
-            "id": "sea_002",
-            "text": "Back to school Egypt (August-September): High demand for tutoring, fitness for students, uniforms, and supplies. Target parents of school-age children. Budget should increase 30% in August. Campaigns emphasizing 'new year, new start' messaging perform well.",
-            "category": "seasonal", "industry": "all"
-        },
-        {
-            "id": "sea_003",
-            "text": "Summer in Egypt (June-August): Gym memberships spike in June before summer. Clinics see increase in skin and aesthetic procedures. Delivery and indoor businesses benefit from heat. 'Summer body' and 'beach ready' messaging for fitness businesses peaks in May-June.",
-            "category": "seasonal", "industry": "all"
-        },
-        {
-            "id": "sea_004",
-            "text": "Eid Al-Fitr Egypt: Launch gift and celebration campaigns 1 week before. Clothing, sweets, and gift businesses see 3-5x sales increase. Run gym renewal campaigns right after Eid — people feel guilty about eating and are motivated to restart.",
-            "category": "seasonal", "industry": "all"
-        },
-        {
-            "id": "sea_005",
-            "text": "New Year (January) Egypt: Fitness, self-improvement, and education businesses see highest lead volume of the year. 'New year, new me' messaging works exceptionally well. January is the best month to acquire gym members — highest volume, most motivated leads.",
-            "category": "seasonal", "industry": "gym"
-        },
-
-        # ── OPTIMIZATION & DIAGNOSTICS ──
-        {
-            "id": "opt_001",
-            "text": "CPL diagnosis framework for Egypt: EGP 0-50 = excellent, scale immediately. EGP 50-100 = average, test new creative. EGP 100-150 = poor, test new audience and creative urgently. EGP 150+ = stop and rebuild from scratch. Never let a losing campaign run more than 7 days.",
-            "category": "optimization", "industry": "all"
-        },
-        {
-            "id": "opt_002",
-            "text": "CTR benchmarks for Egypt: Below 0.5% = change creative immediately. 0.5-1% = average, test new hooks. 1-2% = good. Above 2% = excellent, scale budget aggressively. CTR above 3% is exceptional — duplicate and scale horizontally.",
-            "category": "optimization", "industry": "all"
-        },
-        {
-            "id": "opt_003",
-            "text": "Frequency management: When frequency exceeds 3 in 7 days, CPL rises and CTR drops. Refresh creative or expand audience when frequency hits 2.5. For retargeting, frequency up to 5 is acceptable. High frequency on cold audiences = creative fatigue.",
-            "category": "optimization", "industry": "all"
-        },
-        {
-            "id": "opt_004",
-            "text": "A/B testing priority order for Egyptian campaigns: 1) Offer (most impact — free trial vs discount vs consultation), 2) Creative hook (second biggest), 3) Audience (third), 4) Ad format. Test one element at a time. Wait 7 days minimum before declaring a winner.",
-            "category": "optimization", "industry": "all"
-        },
-        {
-            "id": "opt_005",
-            "text": "Conversion rate optimization: If CTR is good (>1%) but CPL is high, the problem is the landing page or instant form — not the ad. If CTR is low (<0.5%), the problem is the creative or audience. Diagnose before making changes.",
-            "category": "optimization", "industry": "all"
-        },
-        {
-            "id": "opt_006",
-            "text": "Lead quality scoring for Egyptian businesses: Track which campaigns bring leads that actually convert to paying customers. A campaign with EGP 40 CPL but 5% conversion is worse than a campaign with EGP 80 CPL but 25% conversion. Optimize for cost per customer, not cost per lead.",
-            "category": "optimization", "industry": "all"
-        },
-
-        # ── COMMON MISTAKES ──
-        {
-            "id": "mis_001",
-            "text": "Most common mistake by Egyptian SMEs: using Traffic objective when they want leads. Traffic optimizes for clicks, not conversions. Always match campaign objective to actual business goal. Use Leads objective for lead generation, not Traffic.",
-            "category": "mistakes", "industry": "all"
-        },
-        {
-            "id": "mis_002",
-            "text": "Second most common mistake: targeting all of Egypt with no interest filters. 'Egypt, All ages, No interests' wastes 60-70% of budget on irrelevant people. Always use interest targeting, location radius, or custom audiences to narrow focus.",
-            "category": "mistakes", "industry": "all"
-        },
-        {
-            "id": "mis_003",
-            "text": "Third most common mistake: editing campaigns too early. Egyptian business owners often pause or change campaigns after 2-3 days with no results. Campaigns need 7-14 days minimum to exit learning phase. Premature editing resets learning and wastes budget.",
-            "category": "mistakes", "industry": "all"
-        },
-        {
-            "id": "mis_004",
-            "text": "Not installing Meta Pixel is critical mistake #1. Without Pixel, you cannot run conversion campaigns, build website custom audiences, or measure true ROI. Pixel installation must be the first step before running any paid ads.",
-            "category": "mistakes", "industry": "all"
-        },
-        {
-            "id": "mis_005",
-            "text": "Running too many campaigns with small budgets. Five campaigns with EGP 20/day each perform far worse than one campaign with EGP 100/day. Meta's algorithm needs volume to optimize. Consolidate campaigns and concentrate budget on winners.",
-            "category": "mistakes", "industry": "all"
-        },
-        {
-            "id": "mis_006",
-            "text": "Using stock photos in Egyptian market. Real photos of the actual business, team, products, and customers outperform stock photos by 2-3x. Egyptian consumers can spot inauthenticity immediately. Real photos build trust and local relevance.",
-            "category": "mistakes", "industry": "all"
-        },
-
-        # ── WHATSAPP & CONVERSION ──
-        {
-            "id": "wa_001",
-            "text": "WhatsApp is the #1 sales closing tool in Egypt. After getting a lead, the fastest path to conversion is a WhatsApp message within 5 minutes of form submission. Lead response time is the biggest factor in conversion rate — faster response = higher close rate.",
-            "category": "conversion", "industry": "all"
-        },
-        {
-            "id": "wa_002",
-            "text": "Click-to-WhatsApp ads in Egypt: For businesses that close sales via phone or chat, Click-to-WhatsApp ads often outperform standard lead forms. The conversation starts immediately. Best for: clinics, real estate, high-ticket services, restaurants.",
-            "category": "conversion", "industry": "all"
-        },
-        {
-            "id": "wa_003",
-            "text": "Lead follow-up sequence Egypt: Message 1 (within 5 min): Welcome + confirm interest. Message 2 (same day): Share social proof or offer details. Message 3 (day 2): Address common objection. Message 4 (day 3): Create urgency. 60% of Egyptian leads convert within 72 hours if followed up correctly.",
-            "category": "conversion", "industry": "all"
-        },
-
-        # ── INDUSTRY BENCHMARKS EGYPT ──
-        {
-            "id": "bench_001",
-            "text": "Egypt gym/fitness benchmarks 2026: Good CPL EGP 30-60, Average EGP 60-100, Poor above EGP 100. CTR benchmark: 1.5-2.5%. Best performing audience: Women 25-40 Cairo and Giza. Best performing offer: Free trial or first session free.",
-            "category": "benchmarks", "industry": "gym"
-        },
-        {
-            "id": "bench_002",
-            "text": "Egypt clinic/healthcare benchmarks 2026: Good CPL EGP 50-90, Average EGP 90-150, Poor above EGP 150. Dental and dermatology have lowest CPL. Specialized medical procedures have highest but also highest LTV. Phone call leads convert 3x better than form leads.",
-            "category": "benchmarks", "industry": "clinic"
-        },
-        {
-            "id": "bench_003",
-            "text": "Egypt e-commerce benchmarks 2026: Good ROAS 3x+, Average 2-3x, Poor below 2x. Average CTR for product ads: 1-2%. Cart abandonment retargeting typically achieves 4-6x ROAS. Fashion and beauty categories have highest volume but most competition.",
-            "category": "benchmarks", "industry": "ecommerce"
-        },
-        {
-            "id": "bench_004",
-            "text": "Egypt real estate benchmarks 2026: Good CPL EGP 150-250 for qualified leads, Average EGP 250-400, Poor above EGP 400. Video tours and 360 photos significantly reduce CPL. Leads asking about payment plans convert 2x better than leads asking about price.",
-            "category": "benchmarks", "industry": "real_estate"
-        },
-        {
-            "id": "bench_005",
-            "text": "Egypt salon/beauty benchmarks 2026: Good CPL EGP 25-50, Average EGP 50-80, Poor above EGP 80. Women 22-38 in Cairo convert best. Before/after content has 3x lower CPL than promotional content. First-visit offer (discount or free service) is most effective acquisition mechanic.",
-            "category": "benchmarks", "industry": "salon"
-        },
+        {"id": "meta_001", "text": "Meta's Andromeda system (2025) fundamentally changed how ads are delivered. One ad now generates hundreds of variations automatically. The algorithm now does targeting — advertisers should focus on creative quality, not audience micro-segmentation. Broad targeting + strong creative outperforms narrow targeting + average creative.", "category": "platform", "industry": "all"},
+        {"id": "meta_002", "text": "Advantage+ campaigns are now Meta's default in 2026. They use AI to automatically optimize targeting, placements, and creative. Best practice: use Advantage+ for scaling proven campaigns, use manual campaigns for testing new audiences and creative. Never use Advantage+ before you have a proven offer.", "category": "platform", "industry": "all"},
+        {"id": "meta_003", "text": "Meta's learning phase in 2026: Some accounts now require only 10 conversions over 3 days to exit learning (down from 50 over 7 days). Never make significant edits during learning phase. Bundle all edits and make them at once to minimize learning resets.", "category": "platform", "industry": "all"},
+        {"id": "meta_004", "text": "Advantage+ Creative (2026): All new Sales, Leads, and App Promotion campaigns launch with AI creative enhancements by default. Meta uses up to 5% of impressions to test enhancement combinations and scales winners automatically. Always provide multiple creative variations — minimum 5 different assets per campaign.", "category": "platform", "industry": "all"},
+        {"id": "meta_005", "text": "AI-generated content disclosure (March 2026): Meta now requires disclosure on ads containing AI-generated or AI-modified content. Skipping this is now the most common reason for ad rejection. Always label AI-generated creatives properly.", "category": "platform", "industry": "all"},
+        {"id": "str_001", "text": "Modern Meta campaign structure (2026): Consolidate ad sets. Instead of many small ad sets with low budgets, use fewer large ad sets with bigger budgets. Meta's algorithm needs volume to optimize. One campaign, 2-3 ad sets, 5-10 ads per ad set outperforms 10 campaigns with small budgets.", "category": "structure", "industry": "all"},
+        {"id": "str_002", "text": "The Power of Five creative strategy for Advantage+ (2026): Every campaign needs 5 distinct ad types — (1) Problem/Solution Video, (2) High-quality photo, (3) User-Generated Content (UGC), (4) Educational carousel, (5) Testimonial or social proof.", "category": "structure", "industry": "all"},
+        {"id": "str_003", "text": "Full funnel approach: Don't just target purchases or leads. Build campaigns for every stage — cold audience awareness, warm audience consideration, hot audience conversion, and customer retention. Each stage needs different creative and messaging.", "category": "structure", "industry": "all"},
+        {"id": "str_004", "text": "Campaign Budget Optimization (CBO) vs Ad Set Budget (ABO): Use CBO when scaling above EGP 500/day — Meta allocates budget to best performing ad sets automatically. Use ABO when testing new audiences or creatives to ensure each gets enough budget for a fair test.", "category": "structure", "industry": "all"},
+        {"id": "obj_001", "text": "For gyms and fitness centers in Egypt, Lead Generation campaigns consistently outperform Traffic and Awareness. Use OUTCOME_LEADS with instant forms. Expected CPL: EGP 30-80 Cairo, EGP 20-60 Alexandria. Always ask for name + phone in the form — not email.", "category": "objectives", "industry": "gym"},
+        {"id": "obj_002", "text": "For clinics and healthcare in Egypt, Lead Generation with phone call optimization works best. Patients prefer calling before booking. Use call ads combined with instant forms. Ask 1-2 qualifying questions in the form. Expected CPL: EGP 40-100.", "category": "objectives", "industry": "clinic"},
+        {"id": "obj_003", "text": "For restaurants in Egypt, Reach and Traffic objectives work better than leads. Focus on awareness and foot traffic. Video ads showing food preparation outperform photos. Boost posts with 1000+ organic reach first, then run paid traffic to those posts.", "category": "objectives", "industry": "restaurant"},
+        {"id": "obj_004", "text": "For e-commerce in Egypt, Catalog Sales (Dynamic Ads) and Conversions outperform Traffic. Install Meta Pixel and set up purchase events before running conversion campaigns. Use Dynamic Product Ads for retargeting abandoned carts. Expected ROAS: 2x-5x.", "category": "objectives", "industry": "ecommerce"},
+        {"id": "obj_005", "text": "For real estate in Egypt, Lead Generation with detailed instant forms works best. Ask for budget range and timeline to qualify leads. Use virtual tour videos instead of static photos. Expected CPL: EGP 100-300 for qualified leads.", "category": "objectives", "industry": "real_estate"},
+        {"id": "obj_006", "text": "For beauty salons in Egypt, Lead Generation for new client acquisition and Reach for retention. Offer a first-visit discount. Before/after photos (with consent) outperform all other creative types. Expected CPL: EGP 25-70.", "category": "objectives", "industry": "salon"},
+        {"id": "aud_001", "text": "2026 targeting philosophy: Broad targeting + great creative outperforms narrow targeting. Meta's AI is better at finding your customers than you are. Start broad, let the algorithm learn, then use the data to understand who's actually converting.", "category": "targeting", "industry": "all"},
+        {"id": "aud_002", "text": "For Egyptian businesses, interest-based targeting still works for cold audiences. Stack 3-5 relevant interests. For gyms: fitness + health + weight loss + nutrition. Avoid broad interests like 'sports' — too wide. Narrow interests reduce waste.", "category": "targeting", "industry": "all"},
+        {"id": "aud_003", "text": "Lookalike audiences in Egypt: Build from customer lists of 500+ or website visitors of 1000+ monthly. Use 1-2% lookalike for prospecting, 3-5% for scaling. Lookalikes from buyers outperform lookalikes from page fans by 3x.", "category": "targeting", "industry": "all"},
+        {"id": "aud_004", "text": "Cairo audience segmentation: New Cairo and Maadi = higher purchasing power. Zamalek and Heliopolis = older and premium. 6th October and Giza = younger and price-sensitive. Segment by district for different ad messages and offers.", "category": "targeting", "industry": "all"},
+        {"id": "aud_005", "text": "Retargeting sequence for Egypt: Day 1-3 website visitors see social proof ad. Day 4-7 see offer ad. Day 8-14 see urgency/scarcity ad. This 3-touch sequence improves conversion by 40%. Exclude converters from all retargeting audiences.", "category": "targeting", "industry": "all"},
+        {"id": "aud_006", "text": "Sequential exclusions for advanced funnels: Exclude people who watched 50% of your video from seeing it again — show them the next video instead. Exclude page engagers from cold audience campaigns to avoid overlap and wasted spend.", "category": "targeting", "industry": "all"},
+        {"id": "aud_007", "text": "Facebook penetration in Egypt is 89% as of 2026. Facebook remains the primary platform for family-oriented services and broad demographics. Instagram and TikTok dominate Gen Z and Millennials. WhatsApp is used for closing sales and customer support — not advertising.", "category": "targeting", "industry": "all"},
+        {"id": "bud_001", "text": "Minimum viable budget for testing in Egypt: EGP 50/day per ad set. Below this, Meta's algorithm cannot exit learning phase. For campaigns with multiple ad sets, allocate at least EGP 150/day total.", "category": "budget", "industry": "all"},
+        {"id": "bud_002", "text": "The 20% scaling rule: Never increase daily budget by more than 20% at a time or the campaign re-enters learning phase. Wait 3-4 days between increases. Scaling ladder example: EGP 100 → 120 → 145 → 175 → 210 → 250.", "category": "budget", "industry": "all"},
+        {"id": "bud_003", "text": "Horizontal vs vertical scaling: For aggressive scaling, duplicate winning campaigns (horizontal scaling) rather than increasing budget on one campaign (vertical scaling). This avoids learning phase resets and maintains performance.", "category": "budget", "industry": "all"},
+        {"id": "bud_004", "text": "Budget allocation framework: 70% to proven winning campaigns, 20% to testing new creatives and audiences, 10% to retargeting. Review and rebalance weekly based on CPL performance.", "category": "budget", "industry": "all"},
+        {"id": "bud_005", "text": "During Ramadan in Egypt, CPL drops 20-30% due to increased social media time. Increase budgets 2 weeks before Ramadan. Best ad times: after iftar 8-11pm and suhour 2-4am. Ads with Ramadan-specific messaging outperform generic ads by 50%.", "category": "budget", "industry": "all"},
+        {"id": "cre_001", "text": "Creative quality is the #1 performance variable in 2026, outweighing audience targeting, bidding, and placement. In Meta's Advantage+ system, the creative itself does the targeting. Focus 80% of effort on creative.", "category": "creative", "industry": "all"},
+        {"id": "cre_002", "text": "Video ads outperform images in Egypt by 30-50% CTR. 15-30 second videos work best. Use captions — 80% of videos are watched without sound. Hook within first 3 seconds is critical.", "category": "creative", "industry": "all"},
+        {"id": "cre_003", "text": "UGC (User Generated Content) is the highest performing ad format in 2026. Real customer reviews, testimonials, and before/after videos outperform polished professional ads by 2-3x.", "category": "creative", "industry": "all"},
+        {"id": "cre_004", "text": "Arabic ads get 40% more engagement than English for Egyptian mass-market businesses. Exception: premium and luxury brands — bilingual ads maintain premium perception. Use Egyptian Arabic dialect not formal Arabic.", "category": "creative", "industry": "all"},
+        {"id": "cre_005", "text": "Social proof is the strongest creative element for Egyptian businesses. Include: number of customers served, years in business, certifications, testimonials. Numbers build credibility instantly.", "category": "creative", "industry": "all"},
+        {"id": "cre_006", "text": "For gym ads in Egypt, transformation photos (before/after) generate the lowest CPL. Real member results outperform stock photos by 3x. Show the process, not just the result.", "category": "creative", "industry": "gym"},
+        {"id": "cre_007", "text": "Urgency and scarcity work well in Egypt: 'Limited spots available', 'Offer ends Friday', 'Only 5 places left this week'. Countdown-style language increases CTR by 20-30%.", "category": "creative", "industry": "all"},
+        {"id": "cre_008", "text": "For clinic ads in Egypt, doctor credibility is the #1 conversion factor. Show doctor name, photo, credentials, years of experience. Patient testimonials are the second strongest element.", "category": "creative", "industry": "clinic"},
+        {"id": "cre_009", "text": "Ad creative refresh cadence: Refresh creatives when frequency exceeds 2.5 in 7 days OR when CTR drops more than 30% from its peak. Top brands produce 10-20 new creative variations per month.", "category": "creative", "industry": "all"},
+        {"id": "cre_010", "text": "Hook writing for Egyptian audience: Use questions, numbers, and local references. First 3 words must stop the scroll. Avoid starting with the business name — start with the customer's problem.", "category": "creative", "industry": "all"},
+        {"id": "sea_001", "text": "Ramadan strategy for Egypt: Start 2 weeks before with awareness. First week: launch lead gen with Ramadan offer. Last 10 days: urgency campaign. After Eid Al-Fitr: reactivation campaign. CPL is 20-30% lower during Ramadan.", "category": "seasonal", "industry": "all"},
+        {"id": "sea_002", "text": "Back to school Egypt (August-September): High demand for tutoring, fitness for students, uniforms, and supplies. Target parents of school-age children. Budget should increase 30% in August.", "category": "seasonal", "industry": "all"},
+        {"id": "sea_003", "text": "Summer in Egypt (June-August): Gym memberships spike in June before summer. Clinics see increase in skin and aesthetic procedures. 'Summer body' and 'beach ready' messaging for fitness businesses peaks in May-June.", "category": "seasonal", "industry": "all"},
+        {"id": "sea_004", "text": "Eid Al-Fitr Egypt: Launch gift and celebration campaigns 1 week before. Run gym renewal campaigns right after Eid — people feel guilty about eating and are motivated to restart.", "category": "seasonal", "industry": "all"},
+        {"id": "sea_005", "text": "New Year (January) Egypt: Fitness, self-improvement, and education businesses see highest lead volume of the year. January is the best month to acquire gym members.", "category": "seasonal", "industry": "gym"},
+        {"id": "opt_001", "text": "CPL diagnosis framework for Egypt: EGP 0-50 = excellent, scale immediately. EGP 50-100 = average, test new creative. EGP 100-150 = poor, test new audience and creative urgently. EGP 150+ = stop and rebuild.", "category": "optimization", "industry": "all"},
+        {"id": "opt_002", "text": "CTR benchmarks for Egypt: Below 0.5% = change creative immediately. 0.5-1% = average, test new hooks. 1-2% = good. Above 2% = excellent, scale budget aggressively.", "category": "optimization", "industry": "all"},
+        {"id": "opt_003", "text": "Frequency management: When frequency exceeds 3 in 7 days, CPL rises and CTR drops. Refresh creative or expand audience when frequency hits 2.5.", "category": "optimization", "industry": "all"},
+        {"id": "opt_004", "text": "A/B testing priority order for Egyptian campaigns: 1) Offer, 2) Creative hook, 3) Audience, 4) Ad format. Test one element at a time. Wait 7 days minimum before declaring a winner.", "category": "optimization", "industry": "all"},
+        {"id": "opt_005", "text": "Conversion rate optimization: If CTR is good (>1%) but CPL is high, the problem is the landing page or instant form — not the ad. If CTR is low (<0.5%), the problem is the creative or audience.", "category": "optimization", "industry": "all"},
+        {"id": "opt_006", "text": "Lead quality scoring for Egyptian businesses: Track which campaigns bring leads that actually convert to paying customers. Optimize for cost per customer, not cost per lead.", "category": "optimization", "industry": "all"},
+        {"id": "mis_001", "text": "Most common mistake by Egyptian SMEs: using Traffic objective when they want leads. Traffic optimizes for clicks, not conversions. Always match campaign objective to actual business goal.", "category": "mistakes", "industry": "all"},
+        {"id": "mis_002", "text": "Second most common mistake: targeting all of Egypt with no interest filters. Always use interest targeting, location radius, or custom audiences to narrow focus.", "category": "mistakes", "industry": "all"},
+        {"id": "mis_003", "text": "Third most common mistake: editing campaigns too early. Campaigns need 7-14 days minimum to exit learning phase. Premature editing resets learning and wastes budget.", "category": "mistakes", "industry": "all"},
+        {"id": "mis_004", "text": "Not installing Meta Pixel is critical mistake #1. Without Pixel, you cannot run conversion campaigns, build website custom audiences, or measure true ROI.", "category": "mistakes", "industry": "all"},
+        {"id": "mis_005", "text": "Running too many campaigns with small budgets. Five campaigns with EGP 20/day each perform far worse than one campaign with EGP 100/day. Consolidate campaigns and concentrate budget on winners.", "category": "mistakes", "industry": "all"},
+        {"id": "mis_006", "text": "Using stock photos in Egyptian market. Real photos of the actual business, team, products, and customers outperform stock photos by 2-3x.", "category": "mistakes", "industry": "all"},
+        {"id": "wa_001", "text": "WhatsApp is the #1 sales closing tool in Egypt. After getting a lead, the fastest path to conversion is a WhatsApp message within 5 minutes of form submission.", "category": "conversion", "industry": "all"},
+        {"id": "wa_002", "text": "Click-to-WhatsApp ads in Egypt: For businesses that close sales via phone or chat, Click-to-WhatsApp ads often outperform standard lead forms. Best for: clinics, real estate, high-ticket services, restaurants.", "category": "conversion", "industry": "all"},
+        {"id": "wa_003", "text": "Lead follow-up sequence Egypt: Message 1 (within 5 min): Welcome + confirm interest. Message 2 (same day): Share social proof or offer details. Message 3 (day 2): Address common objection. Message 4 (day 3): Create urgency.", "category": "conversion", "industry": "all"},
+        {"id": "bench_001", "text": "Egypt gym/fitness benchmarks 2026: Good CPL EGP 30-60, Average EGP 60-100, Poor above EGP 100. CTR benchmark: 1.5-2.5%. Best performing audience: Women 25-40 Cairo and Giza.", "category": "benchmarks", "industry": "gym"},
+        {"id": "bench_002", "text": "Egypt clinic/healthcare benchmarks 2026: Good CPL EGP 50-90, Average EGP 90-150, Poor above EGP 150. Phone call leads convert 3x better than form leads.", "category": "benchmarks", "industry": "clinic"},
+        {"id": "bench_003", "text": "Egypt e-commerce benchmarks 2026: Good ROAS 3x+, Average 2-3x, Poor below 2x. Average CTR for product ads: 1-2%. Cart abandonment retargeting typically achieves 4-6x ROAS.", "category": "benchmarks", "industry": "ecommerce"},
+        {"id": "bench_004", "text": "Egypt real estate benchmarks 2026: Good CPL EGP 150-250 for qualified leads, Average EGP 250-400, Poor above EGP 400. Video tours and 360 photos significantly reduce CPL.", "category": "benchmarks", "industry": "real_estate"},
+        {"id": "bench_005", "text": "Egypt salon/beauty benchmarks 2026: Good CPL EGP 25-50, Average EGP 50-80, Poor above EGP 80. Before/after content has 3x lower CPL than promotional content.", "category": "benchmarks", "industry": "salon"},
     ]
 
     documents = [s["text"] for s in strategies]
     ids = [s["id"] for s in strategies]
     metadatas = [{"category": s["category"], "industry": s["industry"]} for s in strategies]
 
-    strategy_collection.add(
-        documents=documents,
-        ids=ids,
-        metadatas=metadatas
-    )
-
+    strategy_collection.add(documents=documents, ids=ids, metadatas=metadatas)
     print(f"Strategy RAG initialized with {len(strategies)} documents")
 
 
 initialize_strategy_rag()
 
 def get_or_create_business_collection(business_id: str):
-    """Get or create a ChromaDB collection for a specific business"""
     collection_name = f"business_{business_id.replace('-', '_')}"
-    return chroma_client.get_or_create_collection(
-        name=collection_name,
-        embedding_function=openai_ef
-    )
+    return chroma_client.get_or_create_collection(name=collection_name, embedding_function=openai_ef)
 
 
 def build_business_knowledge(business_id: str, business_data: dict):
-    """Build/update the business knowledge base from onboarding data"""
     collection = get_or_create_business_collection(business_id)
-
     documents = []
     ids = []
     metadatas = []
 
-    # Business identity
     if business_data.get("businessName") and business_data.get("description"):
-        documents.append(
-            f"Business: {business_data.get('businessName')}. "
-            f"Industry: {business_data.get('industry')}. "
-            f"City: {business_data.get('city')}. "
-            f"Description: {business_data.get('description')}"
-        )
+        documents.append(f"Business: {business_data.get('businessName')}. Industry: {business_data.get('industry')}. City: {business_data.get('city')}. Description: {business_data.get('description')}")
         ids.append("identity")
         metadatas.append({"type": "identity"})
 
-    # Services
     if business_data.get("services"):
         documents.append(f"Services and products offered: {business_data.get('services')}")
         ids.append("services")
         metadatas.append({"type": "services"})
 
-    # Unique selling point
     if business_data.get("uniqueSellingPoint"):
-        documents.append(
-            f"What makes this business unique: {business_data.get('uniqueSellingPoint')}. "
-            f"Price range: {business_data.get('priceRange')}. "
-            f"Brand tone: {business_data.get('brandTone')}"
-        )
+        documents.append(f"What makes this business unique: {business_data.get('uniqueSellingPoint')}. Price range: {business_data.get('priceRange')}. Brand tone: {business_data.get('brandTone')}")
         ids.append("usp")
         metadatas.append({"type": "usp"})
 
-    # Target audience
     if business_data.get("targetAudience"):
-        documents.append(
-            f"Target audience: {business_data.get('targetAudience')}. "
-            f"Age range: {business_data.get('minAge')} to {business_data.get('maxAge')}. "
-            f"Gender: {business_data.get('gender')}. "
-            f"Customer source: {business_data.get('customerSource')}. "
-            f"Buying cycle: {business_data.get('buyingCycle')}. "
-            f"Average customer value: EGP {business_data.get('averageCustomerValue')}"
-        )
+        documents.append(f"Target audience: {business_data.get('targetAudience')}. Age range: {business_data.get('minAge')} to {business_data.get('maxAge')}. Gender: {business_data.get('gender')}. Customer source: {business_data.get('customerSource')}. Buying cycle: {business_data.get('buyingCycle')}. Average customer value: EGP {business_data.get('averageCustomerValue')}")
         ids.append("audience")
         metadatas.append({"type": "audience"})
 
-    # Goals
     if business_data.get("mainGoal"):
-        documents.append(
-            f"Main advertising goal: {business_data.get('mainGoal')}. "
-            f"Monthly budget: {business_data.get('monthlyBudget')}. "
-            f"Target CPL: EGP {business_data.get('targetCpl')}. "
-            f"Biggest challenge: {business_data.get('biggestChallenge')}"
-        )
+        documents.append(f"Main advertising goal: {business_data.get('mainGoal')}. Monthly budget: {business_data.get('monthlyBudget')}. Target CPL: EGP {business_data.get('targetCpl')}. Biggest challenge: {business_data.get('biggestChallenge')}")
         ids.append("goals")
         metadatas.append({"type": "goals"})
 
-    # Competition
     if business_data.get("competitors"):
-        documents.append(
-            f"Competitors: {business_data.get('competitors')}. "
-            f"What competitors do better: {business_data.get('competitorAdvantage')}. "
-            f"What this business does better: {business_data.get('ourAdvantage')}"
-        )
+        documents.append(f"Competitors: {business_data.get('competitors')}. What competitors do better: {business_data.get('competitorAdvantage')}. What this business does better: {business_data.get('ourAdvantage')}")
         ids.append("competition")
         metadatas.append({"type": "competition"})
 
-    # Online presence
     urls = []
-    if business_data.get("websiteUrl"):
-        urls.append(f"Website: {business_data.get('websiteUrl')}")
-    if business_data.get("facebookPageUrl"):
-        urls.append(f"Facebook: {business_data.get('facebookPageUrl')}")
-    if business_data.get("instagramUrl"):
-        urls.append(f"Instagram: {business_data.get('instagramUrl')}")
+    if business_data.get("websiteUrl"): urls.append(f"Website: {business_data.get('websiteUrl')}")
+    if business_data.get("facebookPageUrl"): urls.append(f"Facebook: {business_data.get('facebookPageUrl')}")
+    if business_data.get("instagramUrl"): urls.append(f"Instagram: {business_data.get('instagramUrl')}")
     if urls:
         documents.append("Online presence: " + ", ".join(urls))
         ids.append("online_presence")
         metadatas.append({"type": "online_presence"})
 
     if documents:
-        # Delete existing docs and re-add (upsert)
         try:
             existing_ids = collection.get()["ids"]
             if existing_ids:
                 collection.delete(ids=existing_ids)
         except:
             pass
-
-        collection.add(
-            documents=documents,
-            ids=ids,
-            metadatas=metadatas
-        )
+        collection.add(documents=documents, ids=ids, metadatas=metadatas)
         print(f"Business RAG built for {business_id}: {len(documents)} documents")
 
     return len(documents)
 
 
 def query_business_rag(business_id: str, query: str, n_results: int = 3) -> str:
-    """Query the business knowledge base"""
     try:
         collection = get_or_create_business_collection(business_id)
         if collection.count() == 0:
@@ -519,19 +195,14 @@ def query_business_rag(business_id: str, query: str, n_results: int = 3) -> str:
 
 
 def query_strategy_rag(query: str, industry: str = "all", n_results: int = 5) -> str:
-    """Query the media buying strategy knowledge base"""
     try:
-        # Query with industry filter first
         where_filter = {"$or": [{"industry": industry}, {"industry": "all"}]} if industry != "all" else None
-        results = strategy_collection.query(
-            query_texts=[query],
-            n_results=n_results,
-            where=where_filter if where_filter else None
-        )
+        results = strategy_collection.query(query_texts=[query], n_results=n_results, where=where_filter if where_filter else None)
         return "\n".join(results["documents"][0])
     except Exception as e:
         print(f"Strategy RAG query error: {e}")
         return ""
+
 
 class BuildRagRequest(BaseModel):
     business_id: str
@@ -546,10 +217,8 @@ def build_rag(req: BuildRagRequest):
 def query_rag(business_id: str, query: str, industry: str = "all"):
     business_context = query_business_rag(business_id, query)
     strategy_context = query_strategy_rag(query, industry)
-    return {
-        "business_context": business_context,
-        "strategy_context": strategy_context
-    }
+    return {"business_context": business_context, "strategy_context": strategy_context}
+
 
 class CopyRequest(BaseModel):
     industry: str
@@ -566,7 +235,6 @@ def health():
 
 @app.post("/generate-copy")
 def generate_copy(req: CopyRequest):
-    # Query RAG for context
     business_context = ""
     strategy_context = ""
     if req.business_id:
@@ -577,7 +245,6 @@ def generate_copy(req: CopyRequest):
 You are an expert advertising copywriter specializing in Egyptian and Middle Eastern businesses.
 
 Generate 3 different Facebook/Instagram ad copy variations for:
-
 Business: {req.business_name}
 Industry: {req.industry}
 Product/Service: {req.product}
@@ -588,16 +255,13 @@ Special Offer: {req.offer if req.offer else "None"}
 {f"Business context (use this to personalize): {business_context}" if business_context else ""}
 {f"Creative strategy knowledge: {strategy_context}" if strategy_context else ""}
 
-Use the business context to make the copy feel authentic and specific to this business.
-Apply the creative strategy knowledge to maximize CTR and conversions.
-
 Each variation must have:
 - hook (first line that stops the scroll, max 10 words)
 - body (2-3 sentences explaining the value)
 - cta (call to action, max 5 words)
 - angle (the emotional approach used)
 
-Return ONLY a JSON array with exactly 3 objects. No extra text:
+Return ONLY a JSON array with exactly 3 objects:
 [
   {{
     "angle": "angle name",
@@ -623,6 +287,9 @@ Return ONLY a JSON array with exactly 3 objects. No extra text:
     variants = json.loads(content)
     return {"variants": variants}
 
+
+# ── UPDATED MODELS WITH PLATFORM IDs ──
+
 class Campaign(BaseModel):
     name: str
     status: str
@@ -632,6 +299,7 @@ class Campaign(BaseModel):
     cpc: float = 0
     daily_budget: float = 0
     impressions: int = 0
+    platform_campaign_id: str = ""
 
 class AdSetData(BaseModel):
     id: str = ""
@@ -646,6 +314,7 @@ class AdSetData(BaseModel):
     min_age: int = 0
     max_age: int = 0
     targeting: str = ""
+    platform_ad_set_id: str = ""
 
 class AdData(BaseModel):
     id: str = ""
@@ -659,6 +328,7 @@ class AdData(BaseModel):
     creative_format: str = ""
     headline: str = ""
     body: str = ""
+    platform_ad_id: str = ""
 
 class CampaignWithDetails(BaseModel):
     name: str
@@ -669,6 +339,7 @@ class CampaignWithDetails(BaseModel):
     cpc: float = 0
     daily_budget: float = 0
     impressions: int = 0
+    platform_campaign_id: str = ""
     ad_sets: list[AdSetData] = []
 
 class RecommendationRequest(BaseModel):
@@ -679,11 +350,11 @@ class RecommendationRequest(BaseModel):
 
 @app.post("/generate-recommendations")
 def generate_recommendations(req: RecommendationRequest):
-    # Build full context text
     full_context = ""
     for i, c in enumerate(req.campaigns):
         full_context += f"""
 CAMPAIGN {i+1}: {c.name}
+- Platform ID: {c.platform_campaign_id}
 - Status: {c.status}
 - Daily Budget: EGP {c.daily_budget}
 - Total Spend: EGP {c.spend}
@@ -695,6 +366,7 @@ CAMPAIGN {i+1}: {c.name}
         for j, adset in enumerate(c.ad_sets):
             full_context += f"""
   AD SET {j+1}: {adset.name}
+  - Platform ID: {adset.platform_ad_set_id}
   - Status: {adset.status}
   - Spend: EGP {adset.spend}
   - Impressions: {adset.impressions}
@@ -706,7 +378,6 @@ CAMPAIGN {i+1}: {c.name}
   - Targeting: {adset.targeting[:200] if adset.targeting else 'N/A'}
 """
 
-    # Query RAG for context
     business_context = ""
     strategy_context = ""
     if req.business_id:
@@ -727,39 +398,61 @@ Egypt benchmarks:
 {f"Business context: {business_context}" if business_context else ""}
 {f"Expert Egypt/MENA strategy: {strategy_context}" if strategy_context else ""}
 
-Full campaign data including ad sets:
+Full campaign data including platform IDs:
 {full_context}
 
 Generate 5 specific actionable recommendations covering ALL levels:
-- At least 1 recommendation about overall campaign strategy
-- At least 1 recommendation about ad set targeting or budget
-- At least 1 recommendation about specific ad performance
+- At least 1 about overall campaign strategy
+- At least 1 about ad set targeting or budget
+- At least 1 about specific ad performance
 - Use actual names, EGP numbers, and percentages from the data
 - Compare against Egypt benchmarks
+- For each recommendation, specify the exact action using the platform IDs
 
-Return ONLY a JSON array with exactly 5 objects. No extra text:
+Action types available:
+- PAUSE_CAMPAIGN — pause underperforming campaign
+- RESUME_CAMPAIGN — resume paused campaign
+- PAUSE_ADSET — pause underperforming ad set
+- RESUME_ADSET — resume paused ad set
+- PAUSE_AD — pause underperforming ad
+- RESUME_AD — resume paused ad
+- INCREASE_BUDGET — increase daily budget (newValue = suggested EGP amount)
+- DECREASE_BUDGET — decrease daily budget (newValue = suggested EGP amount)
+- NONE — no direct action possible
+
+Return ONLY a JSON array with exactly 5 objects:
 [
   {{
     "type": "warning|success|info",
     "level": "campaign|adset|ad",
     "title": "short action title",
     "reasoning": "specific explanation using actual names and EGP values",
-    "confidence": 85
+    "confidence": 85,
+    "action": {{
+      "type": "PAUSE_CAMPAIGN|RESUME_CAMPAIGN|PAUSE_ADSET|RESUME_ADSET|PAUSE_AD|RESUME_AD|INCREASE_BUDGET|DECREASE_BUDGET|NONE",
+      "entityId": "exact platform ID from the data above",
+      "level": "campaign|adset|ad",
+      "newValue": null
+    }}
   }}
 ]
+
+Action rules:
+- ALWAYS use the exact platform ID from the data
+- Pause recommendations → use PAUSE_CAMPAIGN/PAUSE_ADSET/PAUSE_AD with the correct ID
+- Scale recommendations → use INCREASE_BUDGET with newValue as suggested daily budget in EGP
+- No clear action → use NONE with entityId as ""
+- newValue is a number for budget actions, null for status actions
 """
 
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {
-                "role": "system",
-                "content": "You are an expert media buyer for Egypt and MENA. All monetary values must be in EGP. Never use $ or USD. Always return valid JSON only."
-            },
+            {"role": "system", "content": "You are an expert media buyer for Egypt and MENA. All monetary values must be in EGP. Always return valid JSON only with exact platform IDs from the provided data."},
             {"role": "user", "content": prompt}
         ],
         temperature=0.7,
-        max_tokens=1200
+        max_tokens=1500
     )
 
     content = response.choices[0].message.content.strip()
@@ -781,15 +474,14 @@ def chat(req: ChatMessage):
         campaigns_context += f"""
 Campaign: {c.name}
 - Status: {c.status}
-- Daily Budget: ${c.daily_budget}
-- Spend: ${c.spend}
+- Daily Budget: EGP {c.daily_budget}
+- Spend: EGP {c.spend}
 - Impressions: {c.impressions}
 - Clicks: {c.clicks}
 - CTR: {c.ctr}%
-- CPC: ${c.cpc}
+- CPC: EGP {c.cpc}
 """
 
-    # Query RAG for context
     business_context = ""
     strategy_context = ""
     if req.business_id:
@@ -813,7 +505,8 @@ Current campaign data:
 
 Be direct, specific, and actionable. Use their actual business context when answering.
 Keep responses concise — 2-4 sentences max unless detailed explanation is needed.
-Always end with one specific action they should take."""
+Always end with one specific action they should take.
+All monetary values in EGP."""
             },
             {"role": "user", "content": req.message}
         ],
@@ -855,86 +548,50 @@ def normalize_budget(budget_str):
 
 @app.post("/audit")
 def generate_audit(req: AuditRequest):
-    # Build presence summary
     presence = []
-    if req.facebook_page_url:
-        presence.append(f"Facebook: {req.facebook_page_url}")
-    if req.instagram_url:
-        presence.append(f"Instagram: {req.instagram_url}")
-    if req.tiktok_url:
-        presence.append(f"TikTok: {req.tiktok_url}")
-    if req.website_url:
-        presence.append(f"Website: {req.website_url}")
+    if req.facebook_page_url: presence.append(f"Facebook: {req.facebook_page_url}")
+    if req.instagram_url: presence.append(f"Instagram: {req.instagram_url}")
+    if req.tiktok_url: presence.append(f"TikTok: {req.tiktok_url}")
+    if req.website_url: presence.append(f"Website: {req.website_url}")
     presence_text = "\n".join(presence) if presence else "No links provided"
 
-    # Build scanned business info
     scanned_info = ""
-    if req.scanned_description:
-        scanned_info += f"\nScanned business description: {req.scanned_description}"
-    if req.scanned_services:
-        scanned_info += f"\nScanned services/products: {req.scanned_services}"
-    if req.scanned_target_audience:
-        scanned_info += f"\nScanned target audience: {req.scanned_target_audience}"
-    if req.unique_selling_point:
-        scanned_info += f"\nUnique selling point: {req.unique_selling_point}"
+    if req.scanned_description: scanned_info += f"\nScanned business description: {req.scanned_description}"
+    if req.scanned_services: scanned_info += f"\nScanned services/products: {req.scanned_services}"
+    if req.scanned_target_audience: scanned_info += f"\nScanned target audience: {req.scanned_target_audience}"
+    if req.unique_selling_point: scanned_info += f"\nUnique selling point: {req.unique_selling_point}"
 
-    # Build financial analysis
     financial_analysis = ""
-    if req.average_price:
-        financial_analysis += f"\n- Average product/service price: EGP {req.average_price}"
-    if req.monthly_revenue:
-        financial_analysis += f"\n- Monthly total revenue: EGP {req.monthly_revenue}"
-    if req.conversion_rate:
-        financial_analysis += f"\n- Lead to customer conversion rate: {req.conversion_rate}"
-    if req.monthly_customers_from_ads:
-        financial_analysis += f"\n- Monthly new customers from ads: {req.monthly_customers_from_ads}"
-    if req.customer_retention:
-        financial_analysis += f"\n- Customer retention/frequency: {req.customer_retention}"
-    if req.revenue_from_ads_pct:
-        financial_analysis += f"\n- Revenue from ads: {req.revenue_from_ads_pct}"
+    if req.average_price: financial_analysis += f"\n- Average product/service price: EGP {req.average_price}"
+    if req.monthly_revenue: financial_analysis += f"\n- Monthly total revenue: EGP {req.monthly_revenue}"
+    if req.conversion_rate: financial_analysis += f"\n- Lead to customer conversion rate: {req.conversion_rate}"
+    if req.monthly_customers_from_ads: financial_analysis += f"\n- Monthly new customers from ads: {req.monthly_customers_from_ads}"
+    if req.customer_retention: financial_analysis += f"\n- Customer retention/frequency: {req.customer_retention}"
+    if req.revenue_from_ads_pct: financial_analysis += f"\n- Revenue from ads: {req.revenue_from_ads_pct}"
 
-    # Budget midpoints with normalized keys
     budget_midpoints = {
-        "Under EGP 3,000": 1500,
-        "EGP 3,000-10,000": 6500,
-        "EGP 10,000-30,000": 20000,
-        "EGP 30,000-100,000": 65000,
-        "EGP 100,000-300,000": 200000,
-        "Over EGP 300,000": 350000,
-        "Not running ads": 0,
+        "Under EGP 3,000": 1500, "EGP 3,000-10,000": 6500, "EGP 10,000-30,000": 20000,
+        "EGP 30,000-100,000": 65000, "EGP 100,000-300,000": 200000, "Over EGP 300,000": 350000, "Not running ads": 0,
     }
 
-    # Calculate ROAS
     roas_analysis = ""
     try:
         if req.monthly_revenue and req.monthly_budget and req.revenue_from_ads_pct and req.revenue_from_ads_pct != "I don't know":
             revenue = float(req.monthly_revenue)
             ad_spend = budget_midpoints.get(normalize_budget(req.monthly_budget), 0)
-            pct_map = {
-                "Less than 20%": 0.1,
-                "20-40%": 0.3,
-                "40-60%": 0.5,
-                "60-80%": 0.7,
-                "Over 80%": 0.85
-            }
+            pct_map = {"Less than 20%": 0.1, "20-40%": 0.3, "40-60%": 0.5, "60-80%": 0.7, "Over 80%": 0.85}
             normalized_pct = normalize_budget(req.revenue_from_ads_pct)
             pct = pct_map.get(normalized_pct, 0.5)
             revenue_from_ads = revenue * pct
-            print(f"ROAS DEBUG: budget_key='{normalize_budget(req.monthly_budget)}' -> ad_spend={ad_spend}")
-            print(f"ROAS DEBUG: revenue={revenue}, pct_key='{normalized_pct}' -> pct={pct}, revenue_from_ads={revenue_from_ads}")
             if ad_spend > 0:
                 roas = revenue_from_ads / ad_spend
-                print(f"ROAS DEBUG: roas={roas:.2f}")
                 roas_label = "POOR — ads are losing money" if roas < 2 else "AVERAGE — needs improvement" if roas < 4 else "GOOD — consider scaling"
                 roas_analysis = f"\nCalculated ROAS: {roas:.1f}x (Revenue from ads: EGP {revenue_from_ads:.0f} / Ad spend: EGP {ad_spend:.0f}) — {roas_label}"
 
         if req.average_price and req.monthly_budget and req.monthly_customers_from_ads:
             avg_price = float(req.average_price)
             ad_spend = budget_midpoints.get(normalize_budget(req.monthly_budget), 0)
-            customers_map = {
-                "0": 0, "1-5": 3, "5-20": 12, "20-50": 35,
-                "50-100": 75, "Over 100": 120
-            }
+            customers_map = {"0": 0, "1-5": 3, "5-20": 12, "20-50": 35, "50-100": 75, "Over 100": 120}
             customers = customers_map.get(normalize_budget(req.monthly_customers_from_ads), 0)
             if customers > 0 and ad_spend > 0:
                 cost_per_customer = ad_spend / customers
@@ -949,39 +606,25 @@ def generate_audit(req: AuditRequest):
     except Exception as e:
         print(f"ROAS calculation error: {e}")
 
-    # Calculate waste in Python
     budget = budget_midpoints.get(normalize_budget(req.monthly_budget), 0)
     waste_pct = 0
-    if req.pixel_installed == "No":
-        waste_pct += 35
-    elif req.pixel_installed == "I don't know":
-        waste_pct += 20
-    if req.current_cpl == "Over EGP 1,000":
-        waste_pct += 40
-    elif req.current_cpl == "EGP 300-1,000" or req.current_cpl == "EGP 300–1,000":
-        waste_pct += 25
-    elif req.current_cpl == "EGP 100-300" or req.current_cpl == "EGP 100–300":
-        waste_pct += 10
-    elif req.current_cpl == "I don't track this":
-        waste_pct += 30
-    if req.ads_experience in ["Never", "Less than 3 months"]:
-        waste_pct += 20
-    if normalize_budget(req.monthly_budget) == "Under EGP 3,000":
-        waste_pct += 15
-    if req.conversion_rate == "Less than 5%":
-        waste_pct += 25
-    elif req.conversion_rate == "I don't know":
-        waste_pct += 15
+    if req.pixel_installed == "No": waste_pct += 35
+    elif req.pixel_installed == "I don't know": waste_pct += 20
+    if req.current_cpl == "Over EGP 1,000": waste_pct += 40
+    elif req.current_cpl in ["EGP 300-1,000", "EGP 300–1,000"]: waste_pct += 25
+    elif req.current_cpl in ["EGP 100-300", "EGP 100–300"]: waste_pct += 10
+    elif req.current_cpl == "I don't track this": waste_pct += 30
+    if req.ads_experience in ["Never", "Less than 3 months"]: waste_pct += 20
+    if normalize_budget(req.monthly_budget) == "Under EGP 3,000": waste_pct += 15
+    if req.conversion_rate == "Less than 5%": waste_pct += 25
+    elif req.conversion_rate == "I don't know": waste_pct += 15
     has_facebook = bool(req.facebook_page_url)
     has_instagram = bool(req.instagram_url)
-    if not has_facebook and not has_instagram:
-        waste_pct += 20
-    elif not has_facebook or not has_instagram:
-        waste_pct += 10
+    if not has_facebook and not has_instagram: waste_pct += 20
+    elif not has_facebook or not has_instagram: waste_pct += 10
     waste_pct = min(waste_pct, 80)
     estimated_waste = round((budget * waste_pct / 100) / 100) * 100
     waste_str = f"EGP {estimated_waste:,}" if estimated_waste > 0 else "EGP 0 (not running ads)"
-    print(f"WASTE DEBUG: budget={budget}, waste_pct={waste_pct}%, waste_str={waste_str}")
 
     prompt = f"""
 You are an expert digital advertising auditor for businesses in Egypt and the Middle East.
@@ -992,7 +635,7 @@ Business Information:
 - Currently running ads: {req.currently_running_ads}
 - Monthly ad budget: {req.monthly_budget}
 - Meta Pixel installed: {req.pixel_installed}
-- Current CPL (cost per lead): {req.current_cpl}
+- Current CPL: {req.current_cpl}
 - Advertising experience: {req.ads_experience}
 - Main goal: {req.main_goal}
 
@@ -1004,24 +647,7 @@ Financial Data:
 {financial_analysis if financial_analysis else "Not provided"}
 {roas_analysis if roas_analysis else ""}
 
-Based on ALL this REAL data, generate an accurate and specific advertising audit.
-- Use the scanned business info to reference actual products/services
-- Use the financial data to assess real profitability
-- If ROAS is calculated, reference it specifically in budget_efficiency finding
-- If cost per customer exceeds average price, flag it as critical
-- If pixel is not installed, mark as critical
-- Reference specific EGP numbers from the financial data in your findings
-
-Evaluate these 7 areas:
-1. Platform Presence
-2. Ad Account Setup
-3. Campaign Structure
-4. Audience Targeting
-5. Ad Creative Quality
-6. Budget Efficiency (use ROAS and profitability data here)
-7. Overall Strategy
-
-Return ONLY a JSON object. No extra text. Format:
+Generate an accurate and specific advertising audit. Return ONLY a JSON object:
 {{
   "overall_score": 65,
   "estimated_monthly_waste": "PLACEHOLDER",
@@ -1035,30 +661,16 @@ Return ONLY a JSON object. No extra text. Format:
     "budget_efficiency": {{ "score": 55, "label": "Needs work", "finding": "specific finding with ROAS data" }},
     "overall_strategy": {{ "score": 65, "label": "Average", "finding": "specific finding" }}
   }},
-  "top_issues": [
-    "specific issue with EGP numbers",
-    "specific issue referencing actual situation",
-    "specific issue referencing actual situation"
-  ],
-  "quick_wins": [
-    "specific quick win with expected EGP impact",
-    "specific quick win with expected impact",
-    "specific quick win with expected impact"
-  ]
+  "top_issues": ["specific issue with EGP numbers", "specific issue", "specific issue"],
+  "quick_wins": ["specific quick win with expected EGP impact", "specific quick win", "specific quick win"]
 }}
 """
 
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {
-                "role": "system",
-                "content": "You are an expert digital advertising auditor for businesses in Egypt and the Middle East. Always return valid JSON only, no markdown, no extra text."
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
+            {"role": "system", "content": "You are an expert digital advertising auditor for businesses in Egypt and the Middle East. Always return valid JSON only."},
+            {"role": "user", "content": prompt}
         ],
         temperature=0.7,
         max_tokens=1200
@@ -1071,7 +683,6 @@ Return ONLY a JSON object. No extra text. Format:
     return audit
 
 
-
 class ScanRequest(BaseModel):
     website_url: str = ""
     facebook_url: str = ""
@@ -1081,144 +692,75 @@ class ScanRequest(BaseModel):
 async def scan_business(req: ScanRequest):
     scraped_text = ""
 
-    # Scrape website
     if req.website_url:
         try:
             url = req.website_url
-            if not url.startswith("http"):
-                url = "https://" + url
+            if not url.startswith("http"): url = "https://" + url
             async with httpx.AsyncClient(timeout=10, follow_redirects=True) as http_client:
                 res = await http_client.get(url, headers={"User-Agent": "Mozilla/5.0"})
                 soup = BeautifulSoup(res.text, "html.parser")
-
-                # Extract title
                 title = soup.find("title")
-                if title:
-                    scraped_text += f"Website title: {title.text.strip()}\n"
-
-                # Extract meta description
+                if title: scraped_text += f"Website title: {title.text.strip()}\n"
                 meta_desc = soup.find("meta", attrs={"name": "description"})
-                if meta_desc:
-                    scraped_text += f"Meta description: {meta_desc.get('content', '')}\n"
-
-                # Extract all text
-                for tag in soup(["script", "style", "nav", "footer", "header"]):
-                    tag.decompose()
+                if meta_desc: scraped_text += f"Meta description: {meta_desc.get('content', '')}\n"
+                for tag in soup(["script", "style", "nav", "footer", "header"]): tag.decompose()
                 body_text = soup.get_text(separator=" ", strip=True)
                 body_text = re.sub(r'\s+', ' ', body_text)[:3000]
                 scraped_text += f"Website content: {body_text}\n"
-
-                print(f"Website scraped: {len(scraped_text)} chars")
-                print(f"First 500 chars: {scraped_text[:500]}")
-
-                # Find social links
                 for a in soup.find_all("a", href=True):
                     href = a["href"]
-                    if "facebook.com" in href and not req.facebook_url:
-                        scraped_text += f"Found Facebook: {href}\n"
-                    if "instagram.com" in href and not req.instagram_url:
-                        scraped_text += f"Found Instagram: {href}\n"
-                    if "tiktok.com" in href:
-                        scraped_text += f"Found TikTok: {href}\n"
-
+                    if "facebook.com" in href and not req.facebook_url: scraped_text += f"Found Facebook: {href}\n"
+                    if "instagram.com" in href and not req.instagram_url: scraped_text += f"Found Instagram: {href}\n"
+                    if "tiktok.com" in href: scraped_text += f"Found TikTok: {href}\n"
         except Exception as e:
             scraped_text += f"Website scan failed: {str(e)}\n"
-            print(f"Scraping error: {str(e)}")
 
-    # Scrape Facebook page
     if req.facebook_url:
         try:
             url = req.facebook_url
-            if not url.startswith("http"):
-                url = "https://" + url
+            if not url.startswith("http"): url = "https://" + url
             async with httpx.AsyncClient(timeout=10, follow_redirects=True) as http_client:
-                res = await http_client.get(url, headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-                })
+                res = await http_client.get(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
                 soup = BeautifulSoup(res.text, "html.parser")
-
                 title = soup.find("title")
-                if title:
-                    scraped_text += f"Facebook page title: {title.text.strip()}\n"
-
+                if title: scraped_text += f"Facebook page title: {title.text.strip()}\n"
                 meta_desc = soup.find("meta", attrs={"name": "description"})
-                if meta_desc:
-                    scraped_text += f"Facebook description: {meta_desc.get('content', '')}\n"
-
+                if meta_desc: scraped_text += f"Facebook description: {meta_desc.get('content', '')}\n"
                 og_desc = soup.find("meta", attrs={"property": "og:description"})
-                if og_desc:
-                    scraped_text += f"Facebook og description: {og_desc.get('content', '')}\n"
-
-                for tag in soup(["script", "style"]):
-                    tag.decompose()
-                fb_text = soup.get_text(separator=" ", strip=True)
-                fb_text = re.sub(r'\s+', ' ', fb_text)[:1000]
-                if fb_text:
-                    scraped_text += f"Facebook page content: {fb_text}\n"
-
-                print(f"Facebook scraped: {len(scraped_text)} chars")
+                if og_desc: scraped_text += f"Facebook og description: {og_desc.get('content', '')}\n"
         except Exception as e:
             scraped_text += f"Facebook page: {req.facebook_url}\n"
-            print(f"Facebook scraping failed: {str(e)}")
 
-    # Scrape Instagram profile
     if req.instagram_url:
         try:
             url = req.instagram_url
-            if not url.startswith("http"):
-                url = "https://" + url
+            if not url.startswith("http"): url = "https://" + url
             async with httpx.AsyncClient(timeout=10, follow_redirects=True) as http_client:
-                res = await http_client.get(url, headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-                })
+                res = await http_client.get(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
                 soup = BeautifulSoup(res.text, "html.parser")
-
                 og_title = soup.find("meta", attrs={"property": "og:title"})
-                if og_title:
-                    scraped_text += f"Instagram name: {og_title.get('content', '')}\n"
-
+                if og_title: scraped_text += f"Instagram name: {og_title.get('content', '')}\n"
                 og_desc = soup.find("meta", attrs={"property": "og:description"})
-                if og_desc:
-                    scraped_text += f"Instagram bio: {og_desc.get('content', '')}\n"
-
-                meta_desc = soup.find("meta", attrs={"name": "description"})
-                if meta_desc:
-                    scraped_text += f"Instagram description: {meta_desc.get('content', '')}\n"
-
-                print(f"Instagram scraped: {len(scraped_text)} chars")
+                if og_desc: scraped_text += f"Instagram bio: {og_desc.get('content', '')}\n"
         except Exception as e:
             scraped_text += f"Instagram profile: {req.instagram_url}\n"
-            print(f"Instagram scraping failed: {str(e)}")
 
     if not scraped_text or len(scraped_text) < 100:
         return {
-            "business_name": "",
-            "industry": "business",
-            "city": "",
-            "description": "",
-            "services": [],
-            "unique_selling_point": "",
-            "price_range": "mid-range",
-            "brand_tone": "professional",
-            "target_audience": "",
-            "min_age": 25,
-            "max_age": 45,
-            "gender": "all",
-            "facebook_url": req.facebook_url,
-            "instagram_url": req.instagram_url,
-            "tiktok_url": "",
-            "phone_number": "",
-            "scan_failed": True,
+            "business_name": "", "industry": "business", "city": "", "description": "",
+            "services": [], "unique_selling_point": "", "price_range": "mid-range",
+            "brand_tone": "professional", "target_audience": "", "min_age": 25, "max_age": 45,
+            "gender": "all", "facebook_url": req.facebook_url, "instagram_url": req.instagram_url,
+            "tiktok_url": "", "phone_number": "", "scan_failed": True,
             "scan_message": "We couldn't scan this website automatically. Please fill in your business details manually."
         }
 
-    # Send to GPT-4o for analysis
     prompt = f"""
 You are an expert business analyst. Analyze the following website and social media content and extract structured business information.
 
 {scraped_text}
 
-Return ONLY a JSON object with no extra text:
+Return ONLY a JSON object:
 {{
   "business_name": "extracted business name",
   "industry": "one of: gym, clinic, restaurant, salon, ecommerce, real_estate, automotive, business",
@@ -1242,14 +784,8 @@ Return ONLY a JSON object with no extra text:
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {
-                "role": "system",
-                "content": "You are a business analyst. Extract structured data from website and social media content. Return valid JSON only. Never make up data that is not in the content provided."
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
+            {"role": "system", "content": "You are a business analyst. Extract structured data from website content. Return valid JSON only."},
+            {"role": "user", "content": prompt}
         ],
         temperature=0.1,
         max_tokens=800
@@ -1257,8 +793,8 @@ Return ONLY a JSON object with no extra text:
 
     content = response.choices[0].message.content.strip()
     content = content.replace("```json", "").replace("```", "").strip()
-    result = json.loads(content)
-    return result
+    return json.loads(content)
+
 
 class UpdateRagRequest(BaseModel):
     business_id: str
@@ -1268,19 +804,13 @@ class UpdateRagRequest(BaseModel):
 
 @app.post("/update-business-rag")
 def update_business_rag(req: UpdateRagRequest):
-    """Add a new learning to the business RAG"""
     try:
         collection = get_or_create_business_collection(req.business_id)
-        # Delete existing doc with same id if exists
         try:
             collection.delete(ids=[req.learning_id])
         except:
             pass
-        collection.add(
-            documents=[req.learning],
-            ids=[req.learning_id],
-            metadatas=[{"type": req.learning_type}]
-        )
+        collection.add(documents=[req.learning], ids=[req.learning_id], metadatas=[{"type": req.learning_type}])
         return {"status": "success", "learning_id": req.learning_id}
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -1293,7 +823,6 @@ class AnalyzeCampaignsRequest(BaseModel):
 
 @app.post("/analyze-campaign-learnings")
 def analyze_campaign_learnings(req: AnalyzeCampaignsRequest):
-    """Analyze campaign performance and extract learnings for RAG"""
     if not req.campaigns:
         return {"status": "no_campaigns"}
 
@@ -1302,36 +831,25 @@ def analyze_campaign_learnings(req: AnalyzeCampaignsRequest):
         campaigns_text += f"""
 Campaign: {c.name}
 - Status: {c.status}
-- Daily Budget: {c.daily_budget}
-- Spend: {c.spend}
+- Daily Budget: EGP {c.daily_budget}
+- Spend: EGP {c.spend}
 - Impressions: {c.impressions}
 - Clicks: {c.clicks}
 - CTR: {c.ctr}%
-- CPC: {c.cpc}
+- CPC: EGP {c.cpc}
 """
 
-    # Ask GPT-4o to extract learnings
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {
-                "role": "system",
-                "content": "You are an expert media buyer. Extract concise campaign performance learnings. Return JSON only."
-            },
-            {
-                "role": "user",
-                "content": f"""Analyze these campaigns for a {req.industry} business in Egypt and extract key learnings.
+            {"role": "system", "content": "You are an expert media buyer. Extract concise campaign performance learnings. Return JSON only."},
+            {"role": "user", "content": f"""Analyze these campaigns for a {req.industry} business in Egypt and extract key learnings.
 
 {campaigns_text}
 
-Return ONLY a JSON array of learning strings. Each learning should be 1-2 sentences capturing what's working, what's not, and performance trends.
-
-Example format:
-["Campaign X has CTR of 2.1% which is above benchmark — this audience and creative combination is working well.",
- "Campaign Y CPL is EGP 120, above the EGP 60 target — needs new creative or audience adjustment."]
-
-Return 2-4 learnings maximum. No extra text."""
-            }
+Return ONLY a JSON array of 2-4 learning strings. Each learning should be 1-2 sentences.
+Example: ["Campaign X has CTR of 2.1% which is above benchmark — this audience and creative combination is working well."]
+No extra text."""}
         ],
         temperature=0.3,
         max_tokens=500
@@ -1341,19 +859,12 @@ Return 2-4 learnings maximum. No extra text."""
     content = content.replace("```json", "").replace("```", "").strip()
     learnings = json.loads(content)
 
-    # Store each learning in the business RAG
     collection = get_or_create_business_collection(req.business_id)
     import time
     timestamp = str(int(time.time()))
-
     for i, learning in enumerate(learnings):
-        learning_id = f"campaign_learning_{timestamp}_{i}"
         try:
-            collection.add(
-                documents=[learning],
-                ids=[learning_id],
-                metadatas=[{"type": "campaign_performance"}]
-            )
+            collection.add(documents=[learning], ids=[f"campaign_learning_{timestamp}_{i}"], metadatas=[{"type": "campaign_performance"}])
         except:
             pass
 
@@ -1372,18 +883,14 @@ class CreateCampaignRequest(BaseModel):
 
 @app.post("/generate-campaign-strategy")
 def generate_campaign_strategy(req: CreateCampaignRequest):
-    # Query both RAGs
     business_context = query_business_rag(req.business_id, f"campaign strategy for {req.goal}")
     strategy_context = query_strategy_rag(f"campaign creation {req.goal} {req.industry} Egypt", req.industry)
 
     prompt = f"""
 You are an expert Meta media buyer creating a campaign for a {req.industry} business in Egypt.
 
-Business context:
-{business_context if business_context else "No business context available"}
-
-Expert strategy knowledge:
-{strategy_context if strategy_context else "No strategy context available"}
+Business context: {business_context if business_context else "No business context available"}
+Expert strategy knowledge: {strategy_context if strategy_context else "No strategy context available"}
 
 Campaign brief:
 - Goal: {req.goal}
@@ -1393,7 +900,7 @@ Campaign brief:
 - Offer: {req.offer if req.offer else "No specific offer"}
 - City: {req.city if req.city else "Egypt"}
 
-Generate a complete Meta campaign strategy. Return ONLY a JSON object:
+Return ONLY a JSON object:
 {{
   "campaign_name": "descriptive campaign name",
   "objective": "one of: OUTCOME_LEADS, OUTCOME_SALES, OUTCOME_TRAFFIC, OUTCOME_AWARENESS, OUTCOME_ENGAGEMENT",
@@ -1423,8 +930,8 @@ Generate a complete Meta campaign strategy. Return ONLY a JSON object:
     "body": "engaging ad body 2-3 sentences",
     "cta": "one of: LEARN_MORE, SIGN_UP, GET_QUOTE, CONTACT_US, BOOK_NOW"
   }},
-  "strategy_reasoning": "2-3 sentences explaining why this strategy will work for this business",
-  "estimated_cpl": "estimated cost per lead in EGP based on Egypt benchmarks",
+  "strategy_reasoning": "2-3 sentences explaining why this strategy will work",
+  "estimated_cpl": "estimated cost per lead in EGP",
   "estimated_reach": "estimated weekly reach"
 }}
 """
@@ -1432,10 +939,7 @@ Generate a complete Meta campaign strategy. Return ONLY a JSON object:
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {
-                "role": "system",
-                "content": "You are an expert Meta media buyer for Egypt and MENA. Return valid JSON only. Use realistic Egypt-specific targeting and benchmarks."
-            },
+            {"role": "system", "content": "You are an expert Meta media buyer for Egypt and MENA. Return valid JSON only."},
             {"role": "user", "content": prompt}
         ],
         temperature=0.4,
@@ -1446,6 +950,7 @@ Generate a complete Meta campaign strategy. Return ONLY a JSON object:
     content = content.replace("```json", "").replace("```", "").strip()
     return json.loads(content)
 
+
 class GenerateImageRequest(BaseModel):
     prompt: str
     business_id: str = ""
@@ -1453,34 +958,22 @@ class GenerateImageRequest(BaseModel):
 @app.post("/generate-image")
 async def generate_image(req: GenerateImageRequest):
     try:
-        # Query business RAG to enhance the prompt
         business_context = ""
         if req.business_id:
             business_context = query_business_rag(req.business_id, "ad creative visual style brand")
 
-        # Enhance prompt with business context
-        enhanced_prompt = f"""
-Professional Facebook/Instagram advertisement image.
+        enhanced_prompt = f"""Professional Facebook/Instagram advertisement image.
 {req.prompt}
 Style: Clean, modern, high quality, suitable for social media advertising.
-No text overlays. Photorealistic. Well-lit. Professional composition.
-"""
+No text overlays. Photorealistic. Well-lit. Professional composition."""
         if business_context:
             enhanced_prompt += f"\nBrand context: {business_context[:200]}"
 
-        response = client.images.generate(
-            model="dall-e-3",
-            prompt=enhanced_prompt,
-            size="1024x1024",
-            quality="standard",
-            n=1,
-        )
-
-        image_url = response.data[0].url
-        return {"image_url": image_url, "revised_prompt": response.data[0].revised_prompt}
-
+        response = client.images.generate(model="dall-e-3", prompt=enhanced_prompt, size="1024x1024", quality="standard", n=1)
+        return {"image_url": response.data[0].url, "revised_prompt": response.data[0].revised_prompt}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Image generation failed: {str(e)}")
+
 
 class CopyVariantsRequest(BaseModel):
     business_id: str = ""
@@ -1499,33 +992,24 @@ def generate_copy_variants(req: CopyVariantsRequest):
 
     prompt = f"""
 You are an expert Facebook ads copywriter for Egypt and MENA market.
-Business industry: {req.industry}
-Campaign goal: {req.goal}
+Industry: {req.industry}
+Goal: {req.goal}
 Target audience: {req.target_audience}
-Special offer: {req.offer if req.offer else "None"}
+Offer: {req.offer if req.offer else "None"}
 
 {f"Business context: {business_context}" if business_context else ""}
 {f"Expert strategy: {strategy_context}" if strategy_context else ""}
 
-Generate 3 headline variants and 3 body text variants for Facebook ads.
-- Headlines: max 40 characters each, punchy and attention-grabbing
-- Bodies: 2-3 sentences each, benefit-focused, Egypt market context
-- All in English
-- Use EGP for any prices
-- Make each variant distinctly different in angle/hook
+Generate 3 headline variants and 3 body text variants.
+- Headlines: max 40 characters, punchy and attention-grabbing
+- Bodies: 2-3 sentences, benefit-focused, Egypt market context
+- All in English, use EGP for prices
+- Each variant distinctly different in angle
 
 Return ONLY a JSON object:
 {{
-  "headlines": [
-    "Headline variant 1",
-    "Headline variant 2", 
-    "Headline variant 3"
-  ],
-  "bodies": [
-    "Body variant 1 text here.",
-    "Body variant 2 text here.",
-    "Body variant 3 text here."
-  ]
+  "headlines": ["Headline 1", "Headline 2", "Headline 3"],
+  "bodies": ["Body 1 text.", "Body 2 text.", "Body 3 text."]
 }}
 """
 
@@ -1560,7 +1044,7 @@ def generate_campaign_suggestions(req: CampaignSuggestionsRequest):
         strategy_context = query_strategy_rag(f"campaign ideas for {req.industry} Egypt", req.industry)
 
     existing = ", ".join([c.get("name", "") for c in req.existing_campaigns]) if req.existing_campaigns else "None"
-    
+
     from datetime import datetime
     current_date = datetime.now().strftime("%B %Y")
 
@@ -1583,17 +1067,6 @@ Consider:
 - Budget efficiency — suggest campaigns that complement existing ones
 - Current month context: what are Egyptians focused on right now in {current_date}?
 
-Egypt seasonal calendar for reference:
-- January: Winter sales, New Year campaigns
-- February: Valentine's Day
-- March-April: Spring campaigns, sometimes Ramadan
-- April-May: Ramadan (varies by year), Eid Al-Fitr
-- June: Summer begins, school exams end, vacations start
-- July-August: Summer peak, back to school prep
-- September: Back to school, fall campaigns
-- October-November: Pre-holiday season
-- December: Christmas, New Year, winter sales
-
 Today is {current_date} — only suggest what makes sense NOW or in the coming weeks.
 
 Return ONLY a JSON array with exactly 4 objects:
@@ -1601,7 +1074,7 @@ Return ONLY a JSON array with exactly 4 objects:
   {{
     "title": "Campaign title",
     "type": "retargeting|awareness|conversion|seasonal|engagement",
-    "description": "One sentence explaining why this campaign will work for them",
+    "description": "One sentence explaining why this campaign will work",
     "goal": "Get more leads|Increase sales|Build brand awareness|Get more website traffic",
     "suggested_budget": 100,
     "estimated_cpl": "EGP 30-50",
@@ -1614,7 +1087,7 @@ Return ONLY a JSON array with exactly 4 objects:
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": f"You are an expert media buyer for Egypt and MENA. Today is {current_date}. You have access to a detailed Egypt seasonal calendar in your knowledge base — use it to suggest only relevant upcoming campaigns. Never suggest holidays or events that have already passed based on today's date. Return valid JSON only."},
+            {"role": "system", "content": f"You are an expert media buyer for Egypt and MENA. Today is {current_date}. Only suggest seasonal campaigns for events that have NOT yet occurred. Return valid JSON only."},
             {"role": "user", "content": prompt}
         ],
         temperature=0.7,
@@ -1624,6 +1097,97 @@ Return ONLY a JSON array with exactly 4 objects:
     content = response.choices[0].message.content.strip()
     content = content.replace("```json", "").replace("```", "").strip()
     return {"suggestions": json.loads(content)}
+
+
+class CompetitorSpyRequest(BaseModel):
+    competitor_name: str
+    industry: str = "business"
+    business_id: str = ""
+    country: str = "EG"
+
+@app.post("/competitor-spy")
+async def competitor_spy(req: CompetitorSpyRequest):
+    app_access_token = os.getenv("META_APP_ACCESS_TOKEN")
+    ads = []
+
+    try:
+        async with httpx.AsyncClient() as http_client:
+            response = await http_client.get(
+                "https://graph.facebook.com/v19.0/ads_archive",
+                params={
+                    "access_token": app_access_token,
+                    "ad_reached_countries": req.country,
+                    "search_terms": req.competitor_name,
+                    "ad_active_status": "ACTIVE",
+                    "fields": "id,ad_creation_time,ad_creative_body,ad_creative_link_title,ad_snapshot_url,page_name,page_id,impressions,spend",
+                    "limit": 20
+                },
+                timeout=15.0
+            )
+            data = response.json()
+            print(f"Ad Library response: {data}")
+            ads = data.get("data", [])
+    except Exception as e:
+        print(f"Meta Ad Library error: {e}")
+
+    if not ads:
+        analysis = {
+            "strategy_summary": f"No active ads found for {req.competitor_name} in Egypt. They may not be running Facebook ads currently.",
+            "ad_frequency": "0 active ads",
+            "main_message": "Unknown",
+            "target_audience": "Unknown",
+            "insights": [{"type": "opportunity", "title": "Gap in competitor advertising", "detail": f"{req.competitor_name} is not running active Facebook ads — this is your opportunity to dominate the space."}],
+            "recommended_response": "This is your chance to capture market share while your competitor is not advertising."
+        }
+        return {"competitor": req.competitor_name, "ads": [], "analysis": analysis}
+
+    ads_summary = ""
+    for i, ad in enumerate(ads[:10]):
+        ads_summary += f"""
+Ad {i+1}:
+- Page: {ad.get('page_name', 'Unknown')}
+- Created: {ad.get('ad_creation_time', 'Unknown')}
+- Headline: {ad.get('ad_creative_link_title', 'N/A')}
+- Body: {str(ad.get('ad_creative_body', 'N/A'))[:200]}
+- Snapshot: {ad.get('ad_snapshot_url', 'N/A')}
+"""
+
+    strategy_context = query_strategy_rag(f"competitor analysis {req.industry} Egypt", req.industry)
+
+    prompt = f"""
+You are an expert media buyer analyzing competitor Facebook ads for a {req.industry} business in Egypt.
+Competitor: {req.competitor_name}
+Number of active ads: {len(ads)}
+Their ads: {ads_summary}
+Strategy context: {strategy_context if strategy_context else ""}
+
+Return ONLY a JSON object:
+{{
+    "strategy_summary": "2-3 sentence summary of their overall ad strategy",
+    "ad_frequency": "description of how many ads and how often",
+    "main_message": "their main value proposition",
+    "target_audience": "who they appear to be targeting",
+    "insights": [
+        {{"type": "opportunity|threat|observation", "title": "insight title", "detail": "actionable detail in EGP context"}}
+    ],
+    "recommended_response": "What you should do differently to compete"
+}}
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "You are an expert media buyer for Egypt and MENA. Return valid JSON only."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.5,
+        max_tokens=1000
+    )
+
+    content = response.choices[0].message.content.strip()
+    content = content.replace("```json", "").replace("```", "").strip()
+    return {"competitor": req.competitor_name, "total_ads": len(ads), "ads": ads[:10], "analysis": json.loads(content)}
+
 
 @app.post("/seed-egypt-calendar")
 def seed_egypt_calendar():
@@ -1654,284 +1218,40 @@ EGYPTIAN NATIONAL HOLIDAYS:
 
 MONTHLY MARKETING CONTEXT FOR EGYPT:
 
-JANUARY:
-- New Year campaigns, winter sales
-- Coptic Christmas (Jan 7) — gift campaigns for Christian communities
-- Cold weather — indoor activities, gyms peak
-- Post-holiday detox campaigns
-- Best for: Gyms, health, beauty, home
-
-FEBRUARY:
-- Valentine's Day (Feb 14) — gifts, flowers, restaurants
-- Pre-Ramadan preparation begins
-- Ramadan may start late February (check year)
-- Best for: Restaurants, jewellery, gifts, flowers, beauty
-
-MARCH:
-- Ramadan begins (2026: Feb 18 — Mar 19)
-- Iftar and Suhoor campaigns huge
-- Night shopping peaks — ads perform better 8pm-2am
-- Charity and community campaigns
-- Best for: Food delivery, restaurants, fashion, electronics, charity
-
-APRIL:
-- Eid Al-Fitr (2026: ~March 20) — massive spending period
-- Post-Eid slowdown
-- Spring campaigns begin
-- Sham El-Nessim (Egyptian spring holiday, day after Coptic Easter)
-- Best for: Fashion, gifts, travel, outdoor activities
-
-MAY:
-- Labour Day (May 1)
-- Mother's Day in Egypt: 3rd Sunday of March (not May — different from Western)
-- Pre-summer preparations
-- Eid Al-Adha approaches (2026: ~May 27)
-- Best for: Travel, fashion, home, beauty
-
-JUNE:
-- Eid Al-Adha (2026: ~May 27 - June 1) — sacrifice festival, family gatherings
-- Schools finish exams (mid-June)
-- Summer officially begins
-- Islamic New Year (~June 26, 2026)
-- Summer fashion and travel peaks
-- Best for: Travel, fashion, food, summer activities
-
-JULY:
-- Peak summer — Egyptians travel to North Coast, Ain Sokhna, Hurghada
-- Back to school prep begins (late July)
-- Summer sales
-- Best for: Travel, beach, fashion, food delivery, electronics
-
-AUGUST:
-- Back to school season peaks — huge spending on uniforms, supplies, electronics
-- Summer ends, schools start September
-- Ramadan prep if Ramadan is in September (varies by year)
-- Best for: Electronics, fashion, school supplies, stationery
-
-SEPTEMBER:
-- Schools start — back to school winds down
-- Prophet's Birthday (Mawlid, 2026: ~Sep 4) — celebrations, sweets
-- Fall campaigns begin
-- Best for: Education, tutoring, fashion, health
-
-OCTOBER:
-- Armed Forces Day (Oct 6) — national pride campaigns
-- Fall/winter fashion launches
-- Pre-holiday season begins
-- Best for: Fashion, electronics, home, appliances
-
-NOVEMBER:
-- Black Friday (last Friday of November) — massive e-commerce day in Egypt
-- Pre-Ramadan preparation if Ramadan is in winter
-- Winter campaigns begin
-- Best for: Electronics, fashion, home appliances, e-commerce
-
-DECEMBER:
-- Christmas celebrations (expats, Christians — ~10% of population)
-- Coptic Christmas approaches (Jan 7)
-- New Year campaigns
-- End of year sales
-- Best for: Gifts, fashion, restaurants, travel, electronics
+JANUARY: New Year campaigns, Coptic Christmas (Jan 7), gyms peak, post-holiday detox. Best for: Gyms, health, beauty, home.
+FEBRUARY: Valentine's Day (Feb 14), Pre-Ramadan preparation. Best for: Restaurants, jewellery, gifts, beauty.
+MARCH: Ramadan 2026 (Feb 18-Mar 19), iftar/suhoor campaigns, night shopping peaks 8pm-2am. Best for: Food, fashion, electronics.
+APRIL: Eid Al-Fitr (~Mar 20), post-Eid slowdown, Sham El-Nessim. Best for: Fashion, gifts, travel.
+MAY: Pre-summer, Eid Al-Adha approaching (~May 27). Best for: Travel, fashion, home, beauty.
+JUNE: Eid Al-Adha (~May 27-Jun 1), schools finish, summer begins, Islamic New Year (~Jun 26). Best for: Travel, fashion, food.
+JULY: Peak summer, North Coast/Ain Sokhna travel, back to school prep starts. Best for: Travel, beach, fashion, electronics.
+AUGUST: Back to school peaks, uniforms/supplies/electronics. Best for: Electronics, fashion, school supplies.
+SEPTEMBER: Schools start, Mawlid (~Sep 4). Best for: Education, tutoring, fashion, health.
+OCTOBER: Armed Forces Day (Oct 6), fall/winter fashion, pre-holiday season. Best for: Fashion, electronics, home.
+NOVEMBER: Black Friday (last Friday), winter campaigns. Best for: Electronics, fashion, home appliances, e-commerce.
+DECEMBER: Coptic Christmas prep, New Year, end of year sales. Best for: Gifts, fashion, restaurants, travel.
 
 INDUSTRY-SPECIFIC PEAKS:
+GYMS: January (New Year), Post-Ramadan (Apr/May), Pre-summer (May/Jun). Low: Ramadan.
+CLINICS: Back to school (Aug/Sep), Post-Ramadan, Winter flu season (Oct-Dec).
+RESTAURANTS: Ramadan (huge), Eid periods, Summer delivery.
+REAL ESTATE: Post-Eid, Summer (before school year).
+E-COMMERCE: Black Friday, Ramadan nights, Back to school.
+SALONS: Pre-Eid, Pre-wedding season (Apr-Jun), Pre-summer (May).
 
-GYMS & FITNESS:
-- Peak 1: January (New Year resolutions) — highest sign-ups of year
-- Peak 2: Post-Ramadan (April/May) — body recovery campaigns
-- Peak 3: Pre-summer (May/June) — beach body campaigns
-- Low season: Ramadan (people fasting, less gym activity)
-- Campaign tip: Offer free trial or first month discount in January and May
-
-CLINICS & MEDICAL:
-- Peak: Back to school (August/September) — checkups for kids
-- Peak: Post-Ramadan — health recovery
-- Peak: Winter (October-December) — flu season
-- Campaign tip: Promote preventive care in August and October
-
-RESTAURANTS & FOOD:
-- Huge peak: Ramadan — iftar reservations, family gatherings
-- Peak: Eid Al-Fitr and Eid Al-Adha — family meals
-- Peak: Summer — outdoor dining, delivery
-- Campaign tip: Ramadan campaigns should start 2 weeks before Ramadan
-
-REAL ESTATE:
-- Peak: Post-Eid — families make big purchases after celebrations
-- Peak: Summer — people relocate before school year
-- Campaign tip: Target newlyweds in April-June (peak wedding season)
-
-E-COMMERCE:
-- Peak: Black Friday (November)
-- Peak: Ramadan — online shopping spikes at night
-- Peak: Back to school (August)
-- Campaign tip: Start Black Friday campaigns 2 weeks early
-
-AUTOMOTIVE:
-- Peak: Post-Eid — big purchases after holiday bonuses
-- Peak: January — new year, new car mentality
-- Campaign tip: Target government employees in January (year-end bonuses)
-
-SALONS & BEAUTY:
-- Peak: Pre-Eid — everyone wants to look good for celebrations
-- Peak: Pre-wedding season (April-June)
-- Peak: Pre-summer (May) — summer prep
-- Campaign tip: Run offers 1 week before Eid
-
-WEDDING SEASON IN EGYPT:
-- Peak season 1: October - December
-- Peak season 2: April - June
-- Low season: Ramadan, Eid periods, summer July-August
-- Related industries: Venues, catering, fashion, photography, beauty
-
-KEY CONSUMER BEHAVIOR IN EGYPT:
-- Egyptians are highly price-sensitive — discounts and offers work extremely well
-- Family-oriented purchasing — campaigns targeting families outperform individual targeting
-- Mobile-first — 95%+ of Facebook users in Egypt use mobile
-- Evening peak — best ad performance 8pm-11pm (especially Ramadan: 10pm-2am)
-- Arabic content performs better for mass market, English for premium/professional segments
-- WhatsApp is the primary communication channel — integrate WhatsApp CTA when possible
-- Installment payments (taqseet) are very popular — highlight if available
+KEY CONSUMER BEHAVIOR:
+- Price-sensitive — discounts work extremely well
+- Family-oriented purchasing
+- Mobile-first — 95%+ use mobile
+- Evening peak — best 8pm-11pm (Ramadan: 10pm-2am)
+- Arabic content 40% more engagement for mass market
+- WhatsApp primary sales closing channel
+- Installment payments (taqseet) very popular
 """
 
     try:
-        strategy_collection = chroma_client.get_or_create_collection(
-            name="adpilot_strategy_rag",
-            metadata={"description": "Media buying strategies for Egypt and MENA"}
-        )
-
-        strategy_collection.upsert(
-            documents=[egypt_calendar],
-            ids=["egypt_seasonal_calendar_2026_2027"],
-            metadatas=[{
-                "type": "seasonal_calendar",
-                "region": "Egypt",
-                "language": "English",
-                "year": "2026-2027"
-            }]
-        )
-
+        strategy_collection_local = chroma_client.get_or_create_collection(name="adpilot_strategy_rag", metadata={"description": "Media buying strategies for Egypt and MENA"})
+        strategy_collection_local.upsert(documents=[egypt_calendar], ids=["egypt_seasonal_calendar_2026_2027"], metadatas=[{"type": "seasonal_calendar", "region": "Egypt", "language": "English", "year": "2026-2027"}])
         return {"status": "success", "message": "Egypt seasonal calendar added to Strategy RAG"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to seed calendar: {str(e)}")
-    
-
-class CompetitorSpyRequest(BaseModel):
-    competitor_name: str
-    industry: str = "business"
-    business_id: str = ""
-    country: str = "EG"
-
-@app.post("/competitor-spy")
-async def competitor_spy(req: CompetitorSpyRequest):
-    import httpx
-
-    app_access_token = os.getenv("META_APP_ACCESS_TOKEN")
-    ads = []
-
-    try:
-        async with httpx.AsyncClient() as http_client:
-            response = await http_client.get(
-                "https://graph.facebook.com/v19.0/ads_archive",
-                params={
-                    "access_token": app_access_token,
-                    "ad_reached_countries": req.country,
-                    "search_terms": req.competitor_name,
-                    "ad_active_status": "ACTIVE",
-                    "fields": "id,ad_creation_time,ad_creative_body,ad_creative_link_title,ad_snapshot_url,page_name,page_id,impressions,spend",
-                    "limit": 20
-                },
-                timeout=15.0
-            )
-            data = response.json()
-            print(f"Ad Library response: {data}")
-            ads = data.get("data", [])
-    except Exception as e:
-        print(f"Meta Ad Library error: {e}")
-
-    if not ads:
-        # Still run AI analysis even with no ads
-        analysis = {
-            "strategy_summary": f"No active ads found for {req.competitor_name} in Egypt. They may not be running Facebook ads currently.",
-            "ad_frequency": "0 active ads",
-            "main_message": "Unknown",
-            "target_audience": "Unknown",
-            "insights": [
-                {
-                    "type": "opportunity",
-                    "title": "Gap in competitor advertising",
-                    "detail": f"{req.competitor_name} is not running active Facebook ads — this is your opportunity to dominate the space."
-                }
-            ],
-            "recommended_response": "This is your chance to capture market share while your competitor is not advertising."
-        }
-        return {
-            "competitor": req.competitor_name,
-            "ads": [],
-            "analysis": analysis
-        }
-
-    # Build ads summary for AI
-    ads_summary = ""
-    for i, ad in enumerate(ads[:10]):
-        ads_summary += f"""
-Ad {i+1}:
-- Page: {ad.get('page_name', 'Unknown')}
-- Created: {ad.get('ad_creation_time', 'Unknown')}
-- Headline: {ad.get('ad_creative_link_title', 'N/A')}
-- Body: {str(ad.get('ad_creative_body', 'N/A'))[:200]}
-- Impressions: {ad.get('impressions', {}).get('lower_bound', 'N/A')} - {ad.get('impressions', {}).get('upper_bound', 'N/A')}
-- Snapshot: {ad.get('ad_snapshot_url', 'N/A')}
-"""
-
-    strategy_context = query_strategy_rag(f"competitor analysis {req.industry} Egypt", req.industry)
-
-    prompt = f"""
-You are an expert media buyer analyzing competitor Facebook ads for a {req.industry} business in Egypt.
-
-Competitor: {req.competitor_name}
-Number of active ads found: {len(ads)}
-
-Their active ads:
-{ads_summary}
-
-Expert strategy context:
-{strategy_context if strategy_context else ""}
-
-Analyze their advertising strategy and provide actionable insights.
-
-Return ONLY a JSON object:
-{{
-    "strategy_summary": "2-3 sentence summary of their overall ad strategy",
-    "ad_frequency": "description of how many ads and how often they run",
-    "main_message": "their main value proposition based on ad content",
-    "target_audience": "who they appear to be targeting",
-    "insights": [
-        {{
-            "type": "opportunity|threat|observation",
-            "title": "short insight title",
-            "detail": "specific actionable detail in EGP context"
-        }}
-    ],
-    "recommended_response": "What you should do differently to compete with them"
-}}
-"""
-
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": "You are an expert media buyer for Egypt and MENA. Analyze competitor ads and provide strategic insights. Return valid JSON only."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.5,
-        max_tokens=1000
-    )
-
-    content = response.choices[0].message.content.strip()
-    content = content.replace("```json", "").replace("```", "").strip()
-    analysis = json.loads(content)
-
-    return {
-        "competitor": req.competitor_name,
-        "total_ads": len(ads),
-        "ads": ads[:10],
-        "analysis": analysis
-    }    
