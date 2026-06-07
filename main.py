@@ -1812,3 +1812,126 @@ KEY CONSUMER BEHAVIOR IN EGYPT:
         return {"status": "success", "message": "Egypt seasonal calendar added to Strategy RAG"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to seed calendar: {str(e)}")
+    
+
+class CompetitorSpyRequest(BaseModel):
+    competitor_name: str
+    industry: str = "business"
+    business_id: str = ""
+    country: str = "EG"
+
+@app.post("/competitor-spy")
+async def competitor_spy(req: CompetitorSpyRequest):
+    import httpx
+
+    app_access_token = os.getenv("META_APP_ACCESS_TOKEN")
+    ads = []
+
+    try:
+        async with httpx.AsyncClient() as http_client:
+            response = await http_client.get(
+                "https://graph.facebook.com/v19.0/ads_archive",
+                params={
+                    "access_token": app_access_token,
+                    "ad_reached_countries": req.country,
+                    "search_terms": req.competitor_name,
+                    "ad_active_status": "ACTIVE",
+                    "fields": "id,ad_creation_time,ad_creative_body,ad_creative_link_title,ad_snapshot_url,page_name,page_id,impressions,spend",
+                    "limit": 20
+                },
+                timeout=15.0
+            )
+            data = response.json()
+            print(f"Ad Library response: {data}")
+            ads = data.get("data", [])
+    except Exception as e:
+        print(f"Meta Ad Library error: {e}")
+
+    if not ads:
+        # Still run AI analysis even with no ads
+        analysis = {
+            "strategy_summary": f"No active ads found for {req.competitor_name} in Egypt. They may not be running Facebook ads currently.",
+            "ad_frequency": "0 active ads",
+            "main_message": "Unknown",
+            "target_audience": "Unknown",
+            "insights": [
+                {
+                    "type": "opportunity",
+                    "title": "Gap in competitor advertising",
+                    "detail": f"{req.competitor_name} is not running active Facebook ads — this is your opportunity to dominate the space."
+                }
+            ],
+            "recommended_response": "This is your chance to capture market share while your competitor is not advertising."
+        }
+        return {
+            "competitor": req.competitor_name,
+            "ads": [],
+            "analysis": analysis
+        }
+
+    # Build ads summary for AI
+    ads_summary = ""
+    for i, ad in enumerate(ads[:10]):
+        ads_summary += f"""
+Ad {i+1}:
+- Page: {ad.get('page_name', 'Unknown')}
+- Created: {ad.get('ad_creation_time', 'Unknown')}
+- Headline: {ad.get('ad_creative_link_title', 'N/A')}
+- Body: {str(ad.get('ad_creative_body', 'N/A'))[:200]}
+- Impressions: {ad.get('impressions', {}).get('lower_bound', 'N/A')} - {ad.get('impressions', {}).get('upper_bound', 'N/A')}
+- Snapshot: {ad.get('ad_snapshot_url', 'N/A')}
+"""
+
+    strategy_context = query_strategy_rag(f"competitor analysis {req.industry} Egypt", req.industry)
+
+    prompt = f"""
+You are an expert media buyer analyzing competitor Facebook ads for a {req.industry} business in Egypt.
+
+Competitor: {req.competitor_name}
+Number of active ads found: {len(ads)}
+
+Their active ads:
+{ads_summary}
+
+Expert strategy context:
+{strategy_context if strategy_context else ""}
+
+Analyze their advertising strategy and provide actionable insights.
+
+Return ONLY a JSON object:
+{{
+    "strategy_summary": "2-3 sentence summary of their overall ad strategy",
+    "ad_frequency": "description of how many ads and how often they run",
+    "main_message": "their main value proposition based on ad content",
+    "target_audience": "who they appear to be targeting",
+    "insights": [
+        {{
+            "type": "opportunity|threat|observation",
+            "title": "short insight title",
+            "detail": "specific actionable detail in EGP context"
+        }}
+    ],
+    "recommended_response": "What you should do differently to compete with them"
+}}
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "You are an expert media buyer for Egypt and MENA. Analyze competitor ads and provide strategic insights. Return valid JSON only."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.5,
+        max_tokens=1000
+    )
+
+    content = response.choices[0].message.content.strip()
+    content = content.replace("```json", "").replace("```", "").strip()
+    analysis = json.loads(content)
+
+    return {
+        "competitor": req.competitor_name,
+        "total_ads": len(ads),
+        "ads": ads[:10],
+        "analysis": analysis
+    }    
